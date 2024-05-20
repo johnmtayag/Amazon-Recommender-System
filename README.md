@@ -187,26 +187,74 @@ To visualize the dataset effectively, Principal Component Analysis (PCA) is used
    The amount of variance explained by each eigenvector is visualized to understand the significance of each component.
 
 <p align="center">
-  <img src="images/explained_variance.png" alt="Explained Variance" width="500"/>
+  <img src="images/explained_variance.png" alt="Explained Variance" width="400"/>
 </p>
 
 ### Project Data onto Top Principal Components
 Each data point is represented along the top 2 principal components, enabling a reduced-dimension visualization.
 
-**Data Representation after PCA**:\
-Here is an example of the data before and after PCA:
-
-**Original Data**:
-| id | ss_id | stamp_date | power_kW_values | coefficients | reconstructions |
-|----|-------|------------|-----------------|--------------|-----------------|
-| 0  | 2485  | 2012-01-21 | [0.0, 0.0, 0.0, ...] | [0.49785779737625, ...] | [0.00410097621387, ...] |
-
-**Data After PCA**:
-| id | ss_id | stamp_date | power_kW_values | coefficients | reconstructions | PC | PC1 | PC2 |
-|----|-------|------------|-----------------|--------------|-----------------|----|-----|-----|
-| 0  | 2485  | 2012-01-21 | [0.0, 0.0, 0.0, ...] | [0.49785779737625, ...] | [0.00410097621387, ...] | [0.8672136263947494, 0.0871414123456789] | 0.8672136263947494 | 0.0871414123456789 |
+<p align="center">
+  <img src="images/pca_top_two_principal_components.png" alt="Principal Components" width="500"/>
+</p>
 
 This process reduces the dataset to 2 dimensions, enabling visualization and further analysis of the power generation data. The resulting data can be plotted to show the distribution along the principal components, aiding in the identification of patterns and anomalies.
+
+## Anomaly Detection Using Principal Component Analysis
+To identify anomalies in the power generation data, Principal Component Analysis (PCA) is applied. Anomalies are identified based on their deviation from the main data distribution in the principal component space.
+
+### Identifying Outliers
+Outliers were detected where PC1 > 10. A total of 45 outliers were identified. These outliers are isolated for further analysis to understand the nature of these anomalies. Additionally, a random 10% sample of normal points (where PC1 <= 10) is included for comparison.
+
+**Plotting Outliers:**
+<p align="center">
+  <img src="images/outliers_plot.png" alt="Plotting Coefficient Clusters Along the Top 2 Principal Components (PC1 > 10)" width="600"/>
+</p>
+
+### Analyzing Low PC1 With Increasing PC2
+Power generation curves are visualized with increasing PC2 values where PC1 is low. This helps to understand how PC2 affects the power generation curves when PC1 is below a certain threshold.
+
+**Visualization of Low PC2 With Increasing PC1:**
+<p align="center">
+  <img src="images/low_pc1_high_pc2_plot.png" alt="Visualization of Low PC1 With Increasing PC2" width="700"/>
+</p>
+
+Additionally, the maximum and minimum power_kW values are plotted for curves where PC1 is low, providing further insights into the behavior of these curves.
+
+**Max and Min Power Generation When PC1 < -2:**
+<p align="center">
+  <img src="images/maxmin_pc1fixed_log.png" alt="Max and Min Power Generation When PC1 < -2 Log" width="500"/>
+  <img src="images/maxmin_pc1fixed.png" alt="Max and Min Power Generation When PC1 < -2" width="500"/>
+</p>
+
+### Analyzing Low PC2 With Increasing PC1
+Similarly, power generation curves are visualized with increasing PC1 values where PC2 is low. This analysis helps to understand the behavior of power generation curves when PC2 is below a certain threshold.
+
+**Visualization of Low PC2 With Increasing PC1:**
+<p align="center">
+  <img src="images/low_pc2_high_pc1_plot.png" alt="Visualization of Low PC2 With Increasing PC1" width="700"/>
+</p>
+
+Additionally, the maximum and minimum power_kW values are plotted for curves where PC2 is low, providing further insights into the behavior of these curves.
+
+**Max and Min Power Generation When PC2 < -3:**
+<p align="center">
+  <img src="images/maxmin_pc2fixed_log.png" alt="Max and Min Power Generation When PC2 < -3 Log" width="500"/>
+  <img src="images/maxmin_pc2fixed.png" alt="Max and Min Power Generation When PC2 < -3" width="500"/>
+</p>
+
+### Locating the PC Boundaries for Anomalies
+The boundaries for anomalies in the principal component space are located by setting specific thresholds for PC1 and PC2. This helps in isolating the normal data points from the anomalies. The data points are plotted by their maximum power values.
+
+**Locating PC Boundaries:**\
+Number of points within the bounding box: 54,309,396 out of 54,919,174 total\
+Total points being plotted: 1,016,304
+
+**Visualization of PC Boundaries for Anomalies:**
+<p align="center">
+  <img src="images/pc1pc2_by_maxpower.png" alt="PC Boundaries for Anomalies" width="500"/>
+</p>
+
+By identifying and analyzing these anomalies, we can highlight significant deviations in the power generation data and understand their potential causes. This process transforms the power generation data into a more interpretable form, providing valuable insights into its underlying structures and variations.
 
 
 -------------------------------------------
