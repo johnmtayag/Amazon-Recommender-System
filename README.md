@@ -299,6 +299,25 @@ Overall, the overall panel orientation distribution is very similar to the anoma
 
 Panel tilt seems to affect the rate of anomalous measurements - panels tilted closer to horizontal (angles below 30 degrees) appear to produce more anomalous measurements than those tilted more vertically.
 
+## Conclusion
+
+### Effectiveness of PCA in Highlighting Anomalies
+In this analysis, PCA proved to be an effective method for identifying anomalies in the dataset. By transforming the high-dimensional data into two principal components, we were able to visualize and distinguish normal data points from anomalous ones. The scatter plots of the first two principal components (PC1 and PC2) clearly showed clusters of normal points and isolated anomalies.
+
+As nearly all of the data points had PC values centered on a tight cluster, we defined the anomalies as all points that fell outside of the range PC1 = [-1.75, 0.25] and PC2 = [-2.5, 0.5]. The specific grouping identified had particularly high PC1 and PC2 values, which correlated with spikes in the measured power. This indicates that PCA can successfully capture and highlight abnormal variations in the data, particularly those associated with sudden increases in power generation.
+
+### Observations on Anomalies
+Upon further inspection, it was observed that the anomalies detected by PCA were mainly from systems in the higher kWp (kilowatt-peak) range. This suggests that these systems exhibit more variability and are more prone to producing anomalous data points. 
+
+### Benefits of Using PCA for Anomaly Detection
+Identifying anomalies via PCA not only helps in detecting outliers but also enables the creation of a labeled dataset. This labeled dataset can then be used to train and evaluate supervised learning models, enhancing our ability to predict and manage anomalies in future data.
+
+### Recommendations for Improvement
+1. **Filter Out High kWp Systems**: Since the anomalies were predominantly from high kWp systems, one possible improvement to the model is to remove these systems from the analysis. By focusing on systems within a more uniform kWp range, the model may provide a clearer distinction between normal and anomalous points for smaller systems.
+2. **Combine PCA with Other Techniques**: While PCA was effective, combining it with other anomaly detection techniques, such as clustering methods or separate supervised learning using our identified anomalies, could provide a more robust anomaly detection framework. This hybrid approach could help in capturing a wider variety of anomalies that PCA alone might miss.
+
+### Final Thoughts
+Overall, PCA has shown to be a valuable tool in detecting anomalies within the dataset, especially those related to power spikes. Moreover, the identification of anomalies via PCA helps in creating a labeled dataset, which is crucial for training supervised learning models. By addressing the influence of high kWp systems and incorporating additional techniques and insights, we can further enhance the model's effectiveness and accuracy, providing a robust framework for anomaly detection and management.
 
 -------------------------------------------
 
