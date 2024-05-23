@@ -223,7 +223,7 @@ To visualize the dataset effectively, Principal Component Analysis (PCA) is used
 4. **Plotting Explained Variance**
    The amount of variance explained by each eigenvector is visualized to understand the significance of each component. Note that the first principal component explains nearly 100% of the variance. However, two principal components are used in this analysis to make visualizing the results easier.
 
-PCA was performed on both the original power generation values as well as the reconstructed values. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance.
+PCA was performed on both the original power generation values as well as the reconstructed values. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance. Thus, utilizing the principal components of the reconstructed power values may help us achieve better overall anomaly detection.
 
 <p align="center">
   <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="400"/>
