@@ -70,25 +70,54 @@ There are 36 null values in the metadata dataset:
 </center>
 
 ### Exploring the variables: kwp
-<img src="images/kwp_distribution.png" alt="Distribution of kwp" width="600"/>
-<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="600"/>
-<img src="images/hist_kwp.png" alt="Hist of kwp" width="600"/>
+Most of the PV systems represented in this dataset have fairly low power ratings. However, there are some notable outliers, mainly those with kwp well above 50 kW. As these systems will likely generate higher amounts of electricity, keeping them in the dataset may greatly affect anomaly detection techniques
 
-### Exploring the variables: operational_at
-<img src="images/monthly_num_systems_coming_online.png" alt="Monthly Number of Systems Coming Online" width="600"/>
-<img src="images/num_systems_coming_online.png" alt="Number of Systems Coming Online" width="600"/>
+<center>
+<img src="images/kwp_distribution.png" alt="Distribution of kwp" width="500"/>
+
+<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="400"/>
+<img src="images/hist_kwp.png" alt="Hist of kwp" width="400"/>
+</center>
 
 ### Exploring the variables: tilt
+Most systems are oriented such that the panels are tilted at about 30 degrees or 35 degrees. The distribution then tapers off fairly uniformly at 10 degrees and 50 degrees.
+
+<center>
 <img src="images/tilt_distribution.png" alt="Tilt Distribution" width="600"/>
+</center>
 
 ### Exploring the variables: orientation
+Most systems are oriented such that the panels are oriented about 180 degrees from North. Considering that these systems are located in the UK which is, itself, located at a fairly high latitude, this direction likely maximizes the amount of power generated. However, there is also a notable cluster of systems oriented in the 0-50 degree range.
+
+<center>
 <img src="images/orientation_distribution.png" alt="Orientation Distribution" width="600"/>
+</center>
 
 ### Exploring the variables: Mapping
-<img src="images/map_system_locations.png" alt="System Locations Map" width="400"/>
-<img src="images/map_by_kwp.png" alt="Map by kWp" width="600"/>
-<img src="images/map_by_orientation.png" alt="Map by Orientation" width="600"/>
-<img src="images/map_by_tilt.png" alt="Map by Tilt" width="600"/>
+These systems are plotted on a map using iPyLeaflet to identify any patterns between system location and configuration parameters. The systems appear to be located mainly in England and Scotland and concentrated in populated regions. However, there are no obvious patterns between where a system is located and the configuration parameters:
+
+<center>
+<img src="images/map_system_locations.png" alt="System Locations Map" width="300"/>
+</center>
+
+
+**Coloring Systems by System Power Rating**:
+
+<center>
+<img src="images/map_by_kwp.png" alt="Map by kWp" width="400"/>
+</center>
+
+**Coloring Systems by Panel Orientation**:
+
+<center>
+<img src="images/map_by_orientation.png" alt="Map by Orientation" width="400"/>
+</center>
+
+**Coloring Systems by Panel Tilt**:
+
+<center>
+<img src="images/map_by_tilt.png" alt="Map by Tilt" width="400"/>
+</center>
 
 
 ## Exploring the 30 Minute Dataset
@@ -105,7 +134,7 @@ There are 1,824,316 null values in the 30 minute dataset:
 ## Preprocessing
 
 Steps required for preprocessing:
-* Filter out systems with kwp > 50 
+* Filter out systems outside of the kwp IQR (2.28 <= kwp <= 3.42)
 * Convert energy output to power generation rate
 * Filter out timestamps associated with systems on dates that have fewer than 48 timestamps
 * For each ss_id/date grouping with 48 timestamps, get a list of power_kW ordered by timestamp
@@ -114,18 +143,23 @@ Steps required for preprocessing:
 
 ### Note: Reasons are included here for later reference --> Move them to Discussion
 
-### Preprocessing: Filtering out High-Capacity Solar PV Systems
-Exploring the metadata reveals the presence of several solar PV systems with notably high outlier power generation ratings. The goal of this analysis is to detect anomalies both within a system's daily curves and across all systems. As there are not enough high-capacity systems to make meaningful comparisons between, all systems with a capacity higher than 50 kW are removed from both the 30 minute dataset and the metadata dataset.
+### Preprocessing: Removing Outlier Solar PV Systems
+Exploring the metadata reveals the presence of several solar PV systems with notably high outlier power generation ratings. The goal of this analysis is to detect anomalies both within a system's daily curves and across all systems. As there are not enough high-capacity systems to make meaningful comparisons between, all systems with a capacity higher than 50 kW are removed from both the 30 minute dataset and the metadata dataset. However, as the later principal component analyses are sensitive to high variance in power measurements, the dataset was further restricted to only systems where the power rating was in the Interquartile Region (between 2.28 and 3.42).
 
+Without this step, the resulting distribution of points in the principal component space is extremely spread out, masking potential anomalies. The below plot shows the distribution of points without removing outlier solar PV systems. More than 99% of the data points fall within the red bounding box, so in a way, all of the points outside of the box are anomalies. By limiting the data by power values, the distribution shrinks, with any remaining anomalies becoming much more apparent. 
+
+<p align="center">
+  <img src="images/pc1pc2_by_maxpower.png" alt="PC Boundaries for Anomalies Without Filtering" width="500"/>
+</p>
 
 ### Preprocessing: Converting Energy Output to Power Generation Rate
-The "generation_wh" column of the 30 minute dataset gives the amount of Watts generated in the last 30 minutes for a given solar PV system at a given timestamp. However, each solar PV system is associated with a value in the "kwp" column of the metadata which is the power generation capacity of the system in kW. In order to compare these values, the energy outputs in W are converted to average power generated in kW with the following formula:
+The "generation_wh" column of the 30 minute dataset gives the amount of Watts generated in the last 30 minutes for a given solar PV system at a given timestamp. However, each solar PV system is associated with a value in the "kwp" column of the metadata which is the power generation capacity of the system in kW. In order to more easily compare these values, the energy outputs in W are converted to average power generated in kW with the following formula:
 
 ```math
 \text{power}_{\text{kW}} = \text{generation}_{\text{wh}} \times \left(\frac{60}{30}\right) \times \left(\frac{1}{1000}\right)
 ```
 
-This formula transforms each value in "generation_wh" from the amount of Watts generated in the last 30 minutes to the average power generated over the same 30 minute interval. This new value is saved as "power_kW"
+This formula transforms each value in "generation_wh" from the amount of Watts generated in the last 30 minutes to the average power generated over the same 30 minute interval. This new value is saved as "power_kW."
 
 ### Preprocessing: Removing Missing Data Points
 The energy output of each solar PV system is aggregated and reported at 30 minute intervals, and ideally, each solar PV system would have 48 timestamped reports for each day. Due to the coarse-grained nature of these measurements, any missing data points can greatly affect the shapes of the fitted models. Thus, in order to parameterize the power generation curves as accurately as possible, we need to minimize the number of missing data points.
@@ -159,7 +193,7 @@ To understand how each sinusoid contributes to the overall model, we plot the fi
 </p>
 
 ### Comparing Projected Reconstructions to Original Curves
-Power generation curves are approximated by projecting them onto the basis vectors. This comparison helps in selecting the optimal number of basis vectors for accurate modeling. By using different numbers of basis vectors, it is possible to evaluate how well the approximations match the original curves.
+Power generation curves are approximated by projecting them onto the basis vectors. This comparison shows how increasing the number of basis vector projections makes the resulting reconstruction more accurate.
 
 **Comparison of Original and Approximated Curves**:
 <p align="center">
@@ -167,15 +201,15 @@ Power generation curves are approximated by projecting them onto the basis vecto
 </p>
 
 ### Reconstructing Power Generation Data
-For each row of data, power generation values are reconstructed using the basis vectors and the corresponding coefficients. This reconstruction process validates the accuracy of the Fourier Transform in capturing the characteristics of the power generation curves.
+For each row of data, power generation values are reconstructed using all basis vectors.
 
-**Reconstructed Power Generation Curves**:
+**Example Reconstructed Power Generation Curve**:
 <p align="center">
   <img src="images/recon_power_gen_curves.png" alt="Reconstructed Power Generation Curves" width="400"/>
 </p>
 
-## Reducing Power Generation Data to 2 Dimensions Using PCA
-To visualize the dataset effectively, Principal Component Analysis (PCA) is used to reduce the dimensionality of the power generation data. This process involves several key steps, including computing the covariance matrix, performing eigenvalue decomposition, and projecting the data onto the top principal components.
+## Reducing Reconstructed Power Generation Data to 2 Dimensions Using PCA
+To visualize the dataset effectively, Principal Component Analysis (PCA) is used to reduce the dimensionality of the reconstructed power generation data. This process involves several key steps, including computing the covariance matrix, performing eigenvalue decomposition, and projecting the data onto the top principal components.
 
 ### Performing PCA on the Data and Visualizing Results
 1. **Compute Covariance Matrix**
@@ -189,82 +223,113 @@ To visualize the dataset effectively, Principal Component Analysis (PCA) is used
 4. **Plotting Explained Variance**
    The amount of variance explained by each eigenvector is visualized to understand the significance of each component. Note that the first principal component explains nearly 100% of the variance. However, two principal components are used in this analysis to make visualizing the results easier.
 
-<p align="center">
-  <img src="images/explained_variance.png" alt="Explained Variance" width="400"/>
-</p>
-
-### Project Data onto Top Principal Components
+PCA was performed on both the original power generation values as well as the reconstructed values. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance.
 
 <p align="center">
-  <img src="images/pca_top_two_principal_components.png" alt="Principal Components" width="500"/>
+  <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="400"/>
 </p>
 
-This process reduces the dataset to 2 dimensions, enabling visualization and further analysis of the power generation data. The resulting data can be plotted to show the distribution along the principal components, aiding in the identification of patterns and anomalies.
-
-## Anomaly Detection Using Principal Component Analysis
-To identify anomalies in the power generation data, Principal Component Analysis (PCA) is applied. Anomalies are identified based on their deviation from the main data distribution in the principal component space.
-
-### Identifying Outliers
-A grouping of 45 major outliers were detected where PC1 > 10. These outliers are isolated for further analysis to understand the nature of these anomalies. Additionally, a random 10% sample of normal points (where PC1 <= 10) is included for comparison.
-
-**Plotting Outliers:**
-<p align="center">
-  <img src="images/outliers_plot.png" alt="Plotting Coefficient Clusters Along the Top 2 Principal Components (PC1 > 10)" width="600"/>
-</p>
-
-### Analyzing Low PC1 With Increasing PC2
-Power generation curves are visualized with increasing PC2 values where PC1 is low. This helps to understand how PC2 affects the power generation curves when PC1 is below a certain threshold.
-
-**Visualization of Low PC2 With Increasing PC1:**
-<p align="center">
-  <img src="images/low_pc1_high_pc2_plot.png" alt="Visualization of Low PC1 With Increasing PC2" width="700"/>
-</p>
-
-Additionally, the maximum and minimum power_kW values are plotted for curves where PC1 is low, providing further insights into the behavior of these curves.
-
-**Max and Min Power Generation When PC1 < -2:**
-<p align="center">
-  <img src="images/maxmin_pc1fixed_log.png" alt="Max and Min Power Generation When PC1 < -2 Log" width="500"/>
-  <img src="images/maxmin_pc1fixed.png" alt="Max and Min Power Generation When PC1 < -2" width="500"/>
-</p>
-
-### Analyzing Low PC2 With Increasing PC1
-Similarly, power generation curves are visualized with increasing PC1 values where PC2 is low. This analysis helps to understand the behavior of power generation curves when PC2 is below a certain threshold.
-
-**Visualization of Low PC2 With Increasing PC1:**
-<p align="center">
-  <img src="images/low_pc2_high_pc1_plot.png" alt="Visualization of Low PC2 With Increasing PC1" width="700"/>
-</p>
-
-Additionally, the maximum and minimum power_kW values are plotted for curves where PC2 is low, providing further insights into the behavior of these curves.
-
-**Max and Min Power Generation When PC2 < -3:**
-<p align="center">
-  <img src="images/maxmin_pc2fixed_log.png" alt="Max and Min Power Generation When PC2 < -3 Log" width="500"/>
-  <img src="images/maxmin_pc2fixed.png" alt="Max and Min Power Generation When PC2 < -3" width="500"/>
-</p>
-
-### Locating the PC Boundaries for Anomalies
-The boundaries for anomalies in the principal component space are located by setting specific thresholds for PC1 and PC2. This helps in isolating the normal data points from the anomalies. The data points are plotted by their maximum power values.
-
-**Locating PC Boundaries:**\
-Number of points within the bounding box: 54,309,396 out of 54,919,174 total\
-Total points being plotted: 1,016,304
-
-**Visualization of PC Boundaries for Anomalies:**
-
-The vast majority of data points (54,309,396) have principal components within the range PC1 = [-1.75, 0.25] and PC2 = [-2.5, 0.5]. For this analysis, all data points outside of this bounding box are considered anomalies.
+The reconstructions model the curves well as the mean curve aligns almost perfectly with the mean reconstruction. However, the standard deviations with the reconstructions are generally much lower and smoother than the standard deviations of the original power values.
 
 <p align="center">
-  <img src="images/pc1pc2_by_maxpower.png" alt="PC Boundaries for Anomalies" width="500"/>
+  <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="400"/>
 </p>
 
-These plots identify an interesting relationship between the principal components and the maximum power generated by a given system. When either principal component is too large or too small, the maximum power generated is extremely high. 
-However, the distribution is not uniform - instead, it is heavily skewed toward the third quadrant. By limiting the data points to show only lower maximum power values, the distribution becomes much more centered on the identified bounding box.
+### Visualizing the Data on the Top Principal Components
 
-By identifying and analyzing these anomalies, we can highlight significant deviations in the power generation data and understand their potential causes. This process transforms the power generation data into a more interpretable form, providing valuable insights into its underlying structures and variations.
+<p align="center">
+  <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
+</p>
 
-## Identifying Patterns Between Anomalies and PV System Configurations
+When plotting the data along the top two principal components, four major groupings are present:
+1. A central grouping of points
+2. Points where PC1 > 100
+3. Points where PC1 < 100 and PC2 > 100
+4. Points where PC1 < 100 and PC2 < -100
+
+<p align="center">
+  <img src="images/plotting_major_anomalies.png" alt="Plotting Major Anomalies" width="500"/>
+</p>
+
+There appear to be no significant differences between the anomaly groups - in fact, 8/10 are from the same ss_id, 7635, within a fairly small timeframe (2017-11-20 to 2017-12-07). The major connection between all of these outlier points is that they contain extreme maximum and/or minimum power generation values.
+
+## Exploring the Relationships Between the Top 2 Principal Components
+As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape. Then, the maximum and minimum reconstructed power values are plotted for all points within this range.
+
+<p align="center">
+  <img src="images/main_cluster_with_mean.png" alt="Plotting the Main Cluster" width="500"/>
+</p>
+
+### Analyzing Mean PC1 With Increasing PC2
+The points are sampled such that PC1 is within 0.1 of its mean (-1.21)
+
+**Visualizing Power Generation Curves With Increasing PC2:**
+<p align="center">
+  <img src="images/mean_pc1_curves.png" alt="Visualization of Mean PC1 With Increasing PC2" width="700"/>
+</p>
+
+PC2 appears to correlate with a translation of the bulk of the curve from left to right as it increases.
+
+**Max and Min Power Generation With Increasing PC2:**
+<p align="center">
+  <img src="images/mean_pc1_power.png" alt="Max and Min Power Generation With Mean PC1" width="500"/>
+</p>
+
+No major patterns with power generation are observed as PC2 increases, though at the edges of the distribution, there appear to be large spikes in maximum power measurements
+
+### Analyzing Mean PC2 With Increasing PC1
+The points are sampled such that PC2 is within 0.001 of its mean (-0.064)
+
+**Visualizing Power Generation Curves With Increasing PC1:**
+<p align="center">
+  <img src="images/mean_pc2_curves.png" alt="Visualization of Mean PCw With Increasing PC1" width="700"/>
+</p>
+
+PC1 appears to correlate with the height of the spike in power, though similarly to PC2, the height seems to increase at either end of the spectrum.
+
+**Max and Min Power Generation With Increasing PC1:**
+<p align="center">
+  <img src="images/mean_pc2_power.png" alt="Max and Min Power Generation With Mean PC2" width="500"/>
+</p>
+
+As PC1 increases, the average maximum power generated decreases across this range. However, the standard deviation is fairly large across the whole range.
+
+### Further Anomaly Detection
+
+While there are a few obvious anomalous groupings of points that are located far from the main cluster, there are many located much closer. Other methods will be used to identify which of these points are truly anomalies.
+
+<p align="center">
+  <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
+</p>
+
+We will test other various methods of anomaly detection and extract the points which are consistently identified as anomalous. From these points, we will then analyze the PV system configurations to attempt to identify any patterns.
+
+## Conclusion
+
+### Effectiveness of PCA in Highlighting Anomalies
+In this analysis, PCA proved to be an effective method for identifying anomalies in the dataset. By transforming the high-dimensional data into two principal components, we were able to visualize and distinguish most normal data points from anomalous ones. The scatter plots of the first two principal components (PC1 and PC2) clearly showed clusters of normal points and isolated anomalies.
+
+The specific anomalies identified had particularly high or low PC1 and PC2 values, which correlated with spikes in the measured power. This indicates that PCA can successfully capture and highlight abnormal variations in the data, particularly those associated with sudden increases in power generation.
+
+### Benefits of Using PCA for Anomaly Detection
+Identifying anomalies via PCA not only helps in detecting outliers but also enables the creation of a labeled dataset. This labeled dataset can then be used to train and evaluate supervised learning models, enhancing our ability to predict and manage anomalies in future data.
+
+### Recommendations for Improvement
+1. **Combine PCA with Other Techniques**: While PCA was effective, combining it with other anomaly detection techniques, such as clustering methods or separate supervised learning using our identified anomalies, could provide a more robust anomaly detection framework. This hybrid approach could help in capturing a wider variety of anomalies that PCA alone might miss.
+
+### Final Thoughts
+Overall, PCA has shown to be a valuable tool in detecting anomalies within the dataset, especially those related to power spikes. Moreover, the identification of anomalies via PCA helps in creating a labeled dataset, which is crucial for training supervised learning models. By incorporating additional techniques and insights, we can further enhance the model's effectiveness and accuracy, providing a robust framework for anomaly detection and management.
+
+-------------------------------------------
+
+## Model 2
+Use other methods to identify anomalies closer to the central grouping. Could possibly use the major anomalies as labels for supervised methods
+
+
+
+## Identifying Patterns Between the Major Anomalies and PV System Configurations (Complete this after further anomaly investigation)
+
+vvv Below is old data, but keeping them in here for template purposes
 
 Out of nearly 55 million data points, only 609,778 were identified as outliers whose principal components fell outside of the bounding box. To identify any patterns, the distributions between various configuration settings are compared here.
 
@@ -298,31 +363,6 @@ Overall, the overall panel orientation distribution is very similar to the anoma
 </p>
 
 Panel tilt seems to affect the rate of anomalous measurements - panels tilted closer to horizontal (angles below 30 degrees) appear to produce more anomalous measurements than those tilted more vertically.
-
-## Conclusion
-
-### Effectiveness of PCA in Highlighting Anomalies
-In this analysis, PCA proved to be an effective method for identifying anomalies in the dataset. By transforming the high-dimensional data into two principal components, we were able to visualize and distinguish normal data points from anomalous ones. The scatter plots of the first two principal components (PC1 and PC2) clearly showed clusters of normal points and isolated anomalies.
-
-As nearly all of the data points had PC values centered on a tight cluster, we defined the anomalies as all points that fell outside of the range PC1 = [-1.75, 0.25] and PC2 = [-2.5, 0.5]. The specific grouping identified had particularly high PC1 and PC2 values, which correlated with spikes in the measured power. This indicates that PCA can successfully capture and highlight abnormal variations in the data, particularly those associated with sudden increases in power generation.
-
-### Observations on Anomalies
-Upon further inspection, it was observed that the anomalies detected by PCA were mainly from systems in the higher kWp (kilowatt-peak) range. This suggests that these systems exhibit more variability and are more prone to producing anomalous data points. 
-
-### Benefits of Using PCA for Anomaly Detection
-Identifying anomalies via PCA not only helps in detecting outliers but also enables the creation of a labeled dataset. This labeled dataset can then be used to train and evaluate supervised learning models, enhancing our ability to predict and manage anomalies in future data.
-
-### Recommendations for Improvement
-1. **Filter Out High kWp Systems**: Since the anomalies were predominantly from high kWp systems, one possible improvement to the model is to remove these systems from the analysis. By focusing on systems within a more uniform kWp range, the model may provide a clearer distinction between normal and anomalous points for smaller systems.
-2. **Combine PCA with Other Techniques**: While PCA was effective, combining it with other anomaly detection techniques, such as clustering methods or separate supervised learning using our identified anomalies, could provide a more robust anomaly detection framework. This hybrid approach could help in capturing a wider variety of anomalies that PCA alone might miss.
-
-### Final Thoughts
-Overall, PCA has shown to be a valuable tool in detecting anomalies within the dataset, especially those related to power spikes. Moreover, the identification of anomalies via PCA helps in creating a labeled dataset, which is crucial for training supervised learning models. By addressing the influence of high kWp systems and incorporating additional techniques and insights, we can further enhance the model's effectiveness and accuracy, providing a robust framework for anomaly detection and management.
-
--------------------------------------------
-
-## Model 2
-Use the identified anomalies as labels to perform supervised machine learning (Without the PC variables). 
 
 
 [Reference for algorithm descriptions](https://www.datacamp.com/tutorial/introduction-to-anomaly-detection)
