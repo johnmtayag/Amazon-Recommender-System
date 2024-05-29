@@ -7,11 +7,11 @@ Detecting Anomalies in Solar Power Generation by comparing generation curve prof
 \[Abstract for now --> Build up on this with visuals]
 In order to guarantee that energy consumption demands are met, it is important to ensure that vital power generation systems are functioning as intended. By utilizing a comprehensive time-series dataset featuring over 2.6 billion rows of 30-minute interval power generation data from over 20,000 solar photovoltaic (PV) systems and their respective panel configurations, sourced from the OpenClimateFix repository hosted on Hugging Face, we aim to detect outlier panels that exhibit abnormal power generation patterns. Our methodology involves using the Fourier Transform to parameterize daily power generation curves, then applying Principal Component Analysis (PCA) to identify principal components that capture the most variance between the shapes of the curves. We will analyze the distance between a given panel’s typical generation curve and the average curve allowing for the identification of both global and local irregularities. We can then use this data to identify potential solar panel configurations which are more prone toward anomalous power generation. By providing insights into power generation anomalies, this project enables companies to maintain optimal power generation within their PV systems, thereby contributing to the sustainability and efficiency of solar energy systems.
 
-## Dataset
+### Dataset
 The dataset that we used in this analysis can be obtained [here](https://huggingface.co/datasets/openclimatefix/uk_pv) on HuggingFace. It is gated, so it requires an account to access.
 
 There are five datasets available in this repository, but only 2 will be used in this analysis:
-* **30min.parquet**: Contains data on solar PV generation from over 20,000 PV systems in the UK from 2010 to 2021
+* **30min.parquet**: Contains timestamped power generation values from over 20,000 PV systems in the UK from 2010 to 2021
 * **metadata.csv**: Provides supplemental information on the setup configurations of each PV system
 
 The 30 minute dataset has 2,644,013,376 rows representing timestamped energy output measurements from various solar PV systems located across the UK. There are three columns:
@@ -29,7 +29,7 @@ The 30 minute dataset has 2,644,013,376 rows representing timestamped energy out
 
 </center>
 
-The metadata dataset has 24,662 rows containing supplementary information on how each solar PV system was configured. There are eight columns:
+The metadata dataset has 24,662 rows containing supplementary information on how each solar PV system was configured. Notably, there are more PV systems identified in the metadata dataset than the number actually represented in the 30 minute dataset. There are eight columns:
 1. **ss_id**: The solar PV system ID number (integer)
 2. **latitude_rounded**: The latitude that the solar PV system is located (double)
 3. **longitude_rounded**: The longitude that the solar PV system is located (double)
@@ -49,16 +49,16 @@ The metadata dataset has 24,662 rows containing supplementary information on how
 
 </center>
 
-## Setting Up the Environment
+### Setting Up the Environment
 We utilize the following non-standard Python libraries in our analysis - these need to be set up via pip install or conda install methods.
-* ipyleaflet
+* ipyleaflet [Setup docs](https://ipyleaflet.readthedocs.io/en/latest/installation/index.html)
 
 # Methods
 
 ## Exploring the Metadata Dataset
 
 ### Null Values
-There are 36 null values in the metadata dataset:
+There are 36 null values in the metadata dataset, specifically in the operational_at column:
 
 <center>
 
@@ -70,31 +70,31 @@ There are 36 null values in the metadata dataset:
 </center>
 
 ### Exploring the variables: kwp
-Most of the PV systems represented in this dataset have fairly low power ratings. However, there are some notable outliers, mainly those with kwp well above 50 kW. As these systems will likely generate higher amounts of electricity, keeping them in the dataset may greatly affect anomaly detection techniques
+Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers, mainly those with kwp well above 50 kW. 
 
 <center>
 <img src="images/kwp_distribution.png" alt="Distribution of kwp" width="500"/>
 
-<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="400"/>
-<img src="images/hist_kwp.png" alt="Hist of kwp" width="400"/>
+<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="350"/>
+<img src="images/hist_kwp.png" alt="Hist of kwp" width="350"/>
 </center>
 
 ### Exploring the variables: tilt
-Most systems are oriented such that the panels are tilted at about 30 degrees or 35 degrees. The distribution then tapers off fairly uniformly at 10 degrees and 50 degrees.
+Most systems are oriented such that the panels are tilted at about 30 degrees or 35 degrees. The distribution then tapers off fairly uniformly at 10 degrees and 50 degrees. Interestingly, there is a tendency toward angles divisible by 5 degrees noted by prominent spikes in the distribution.
 
 <center>
 <img src="images/tilt_distribution.png" alt="Tilt Distribution" width="600"/>
 </center>
 
 ### Exploring the variables: orientation
-Most systems are oriented such that the panels are oriented about 180 degrees from North. Considering that these systems are located in the UK which is, itself, located at a fairly high latitude, this direction likely maximizes the amount of power generated. However, there is also a notable cluster of systems oriented in the 0-50 degree range.
+Most systems are oriented such that the panels are oriented about 180 degrees from North. Considering that these systems are located in the UK which is, itself, located at a fairly high latitude, this direction may be maximizing the power generated in this region. However, there is also a notable cluster of systems oriented in the 0-50 degree range which bucks this trend.
 
 <center>
 <img src="images/orientation_distribution.png" alt="Orientation Distribution" width="600"/>
 </center>
 
-### Exploring the variables: Mapping
-These systems are plotted on a map using iPyLeaflet to identify any patterns between system location and configuration parameters. The systems appear to be located mainly in England and Scotland and concentrated in populated regions. However, there are no obvious patterns between where a system is located and the configuration parameters:
+### Exploring the variables: Mapping via iPyLeaflet
+These systems are plotted on a map using iPyLeaflet to identify any patterns between system location and configuration parameters. The PV systems in the dataset are mainly located  in England and Scotland and are particularly concentrated in populated regions. However, there are no obvious patterns between where a system is located and the other configuration parameters:
 
 <center>
 <img src="images/map_system_locations.png" alt="System Locations Map" width="300"/>
@@ -102,18 +102,21 @@ These systems are plotted on a map using iPyLeaflet to identify any patterns bet
 
 
 **Coloring Systems by System Power Rating**:
+The majority of solar PV systems throughout the country have very low power output ratings. There are few with higher power output ratings, and these are located close to major population centers.
 
 <center>
 <img src="images/map_by_kwp.png" alt="Map by kWp" width="400"/>
 </center>
 
 **Coloring Systems by Panel Orientation**:
+Most panels throughout the country are oriented at 180 degrees as identified earlier without any particular geographic trends.
 
 <center>
 <img src="images/map_by_orientation.png" alt="Map by Orientation" width="400"/>
 </center>
 
 **Coloring Systems by Panel Tilt**:
+Most panels throughout the country are oriented at about 30 degrees as identified earlier without any particular geographic trends.
 
 <center>
 <img src="images/map_by_tilt.png" alt="Map by Tilt" width="400"/>
@@ -130,11 +133,18 @@ There are 1,824,316 null values in the 30 minute dataset:
 |            1824316|                 0|             0|
 
 </center>
+
+** Number of Timestamped Entries per Year **
+Though the dataset spans the range 2010 to 2021, the number of timestamped entries from each year varies greatly. Most of the timestamps in the dataset fall within the range 2015-2021, with the range 2017-2020 being particularly highly represented. 2010 and 2011 are both represented quite poorly, especially relative to all other years in the dataset.
+
+<center>
+  <img src="num_timestamps_yearly.png" alt="Number of Timestamped Entries per Year" width="400"/>
+</center>
   
 ## Preprocessing
 
 Steps required for preprocessing:
-* Filter out systems outside of the kwp IQR (2.28 <= kwp <= 3.42)
+* Filter out systems outside of the kwp interquartile range (IQR: 2.28 <= kwp <= 3.42)
 * Convert energy output to power generation rate
 * Filter out timestamps associated with systems on dates that have fewer than 48 timestamps
 * For each ss_id/date grouping with 48 timestamps, get a list of power_kW ordered by timestamp
@@ -144,16 +154,16 @@ Steps required for preprocessing:
 ### Note: Reasons are included here for later reference --> Move them to Discussion
 
 ### Preprocessing: Removing Outlier Solar PV Systems
-Exploring the metadata reveals the presence of several solar PV systems with notably high outlier power generation ratings. The goal of this analysis is to detect anomalies both within a system's daily curves and across all systems. As there are not enough high-capacity systems to make meaningful comparisons between, all systems with a capacity higher than 50 kW are removed from both the 30 minute dataset and the metadata dataset. However, as the later principal component analyses are sensitive to high variance in power measurements, the dataset was further restricted to only systems where the power rating was in the Interquartile Region (between 2.28 and 3.42).
+There are several solar PV systems with notably high outlier power generation ratings, and since the goal of this analysis is to detect anomaly power generation curves, larger curves may end up as false-flags during the detection process. As there are not enough high-capacity systems to make meaningful comparisons, and since the vast majority of systems fall within a tiny subset of kwp values, the dataset was restricted to only systems where the power rating was within the Interquartile Region (between 2.28 and 3.42). This ensures that any detected anomalies will more-likely represent actual anomalies.
 
-Without this step, the resulting distribution of points in the principal component space is extremely spread out, masking potential anomalies. The below plot shows the distribution of points without removing outlier solar PV systems. More than 99% of the data points fall within the red bounding box, so in a way, all of the points outside of the box are anomalies. By limiting the data by power values, the distribution shrinks, with any remaining anomalies becoming much more apparent. 
+The below plot shows the distribution of principal components from the later analysis without removing outlier solar PV systems. More than 99% of the data points fall within the red bounding box, so in a way, all of the points outside of the box may reprsent anomalies. By limiting the data to systems with lower power values, the distribution shrinks, with any remaining anomalies becoming much more apparent. 
 
 <p align="center">
   <img src="images/pc1pc2_by_maxpower.png" alt="PC Boundaries for Anomalies Without Filtering" width="500"/>
 </p>
 
 ### Preprocessing: Converting Energy Output to Power Generation Rate
-The "generation_wh" column of the 30 minute dataset gives the amount of Watts generated in the last 30 minutes for a given solar PV system at a given timestamp. However, each solar PV system is associated with a value in the "kwp" column of the metadata which is the power generation capacity of the system in kW. In order to more easily compare these values, the energy outputs in W are converted to average power generated in kW with the following formula:
+The "generation_wh" column of the 30 minute dataset gives the amount of Watts generated in the last 30 minutes for a given solar PV system at a given timestamp. However, each solar PV system is associated with a value in the "kwp" column of the metadata which is the power generation capacity of the system in kW. In order to more easily compare these values, the energy outputs in W*(30 minutes) are converted to average power generated in kW with the following formula:
 
 ```math
 \text{power}_{\text{kW}} = \text{generation}_{\text{wh}} \times \left(\frac{60}{30}\right) \times \left(\frac{1}{1000}\right)
@@ -162,14 +172,13 @@ The "generation_wh" column of the 30 minute dataset gives the amount of Watts ge
 This formula transforms each value in "generation_wh" from the amount of Watts generated in the last 30 minutes to the average power generated over the same 30 minute interval. This new value is saved as "power_kW."
 
 ### Preprocessing: Removing Missing Data Points
-The energy output of each solar PV system is aggregated and reported at 30 minute intervals, and ideally, each solar PV system would have 48 timestamped reports for each day. Due to the coarse-grained nature of these measurements, any missing data points can greatly affect the shapes of the fitted models. Thus, in order to parameterize the power generation curves as accurately as possible, we need to minimize the number of missing data points.
+The energy output of each solar PV system is aggregated and reported at 30 minute intervals, and so, ideally, each solar PV system would have 48 timestamped reports for each day. Due to the coarse-grained nature of these measurements, any missing data points can greatly affect the shapes of the fitted models, leading to possible false flags. Thus, in order to parameterize the power generation curves as accurately as possible, we need to minimize the number of missing data points.
 
 There are two main categories of missing data points:
 1. For a given solar PV system at a given timestamp (ex: 04/24/2019 12:30:00), the energy output was reported as NULL
-  1. These were removed in a previous step.
 2. For a given solar PV system on a given day, fewer than 48 timestamps exist in the dataset
 
-Out of all pairings of ID-Date, only 144,730 had fewer than 48 timestamps - these were all removed.
+All NULL values were removed from the dataset, and out of all pairings of ID-Date, only 144,730 had fewer than 48 timestamps - these were all also removed.
 
 ### Preprocessing: Collecting Timestamp Groupings
 
@@ -179,21 +188,21 @@ The Fourier Transform is used to analyze and parameterize daily power generation
 ### Defining Constants and Basis
 The process begins by defining the necessary constants and creating an orthonormal basis of sinusoids. This involves:
 - Setting up 10 pairs of sinusoids at increasing frequencies along with a bias curve.
-- Collecting each groupinng of 48 time interval measurements (representing measurements taken at 30-minute intervals over a day).
+- Collecting each grouping of 48 time interval measurements into an array for processing.
 
 The basis vectors are constructed as follows:
-1. Calculate the step size and initialize the basis vectors.
-2. Append cosine and sine functions to the basis vectors for each frequency.
+1. Calculate a step size and formulate the basis vectors as a bias vector and cosine/sine function pairs with increasing frequency values.
+2. Append the desired number of vectors to an array to prepare for matrix operations.
 
 ### Visualizing Basis Sinusoids
-To understand how each sinusoid contributes to the overall model, we plot the first five basis sinusoids. This visualization helps in comprehending the individual components used in the Fourier Transform.
+To understand how each sinusoid contributes to the overall model, we plot the first five basis sinusoids. This visualization helps in understanding how the individual components are used in the Fourier Transform.
 
 <p align="center">
   <img src="images/first_five_basis_sinusoids.png" alt="First 5 Basis Sinusoids" width="400"/>
 </p>
 
 ### Comparing Projected Reconstructions to Original Curves
-Power generation curves are approximated by projecting them onto the basis vectors. This comparison shows how increasing the number of basis vector projections makes the resulting reconstruction more accurate.
+The power generation curves are approximated by projecting them onto the basis vectors. This comparison shows how increasing the number of basis vector projections makes the resulting reconstruction more accurate.
 
 **Comparison of Original and Approximated Curves**:
 <p align="center">
@@ -201,7 +210,7 @@ Power generation curves are approximated by projecting them onto the basis vecto
 </p>
 
 ### Reconstructing Power Generation Data
-For each row of data, power generation values are reconstructed using all basis vectors.
+For this analysis, all basis vectors are used to reconstructed the original curve.
 
 **Example Reconstructed Power Generation Curve**:
 <p align="center">
@@ -209,7 +218,7 @@ For each row of data, power generation values are reconstructed using all basis 
 </p>
 
 ## Reducing Reconstructed Power Generation Data to 2 Dimensions Using PCA
-To visualize the dataset effectively, Principal Component Analysis (PCA) is used to reduce the dimensionality of the reconstructed power generation data. This process involves several key steps, including computing the covariance matrix, performing eigenvalue decomposition, and projecting the data onto the top principal components.
+Principal Component Analysis (PCA) is used to both reduce the dimensionality of the reconstructed power generation data as well as to enable easier visualization of the results. This process involves several key steps, including computing the covariance matrix, performing eigenvalue decomposition, and projecting the data onto the top principal components.
 
 ### Performing PCA on the Data and Visualizing Results
 1. **Compute Covariance Matrix**
@@ -219,23 +228,23 @@ To visualize the dataset effectively, Principal Component Analysis (PCA) is used
      3. The outer product matrices are reduced by summing up each matrix as well as summing up the indices of non-null elements
      4. From this combined matrix, extract and compute the outer product average which is necessary to compute the covariance matrix
 3. **Eigenvalue Decomposition**
-   Eigenvalues and eigenvectors are extracted from the covariance matrix via eigenvalue decomposition and ordered by eigenvalue magnitude. This helps in identifying the principal components that explain the most variance in the data.
+   Eigenvalues and eigenvectors are extracted from the covariance matrix via eigenvalue decomposition and ordered by eigenvalue magnitude. 
 4. **Plotting Explained Variance**
-   The amount of variance explained by each eigenvector is visualized to understand the significance of each component. Note that the first principal component explains nearly 100% of the variance. However, two principal components are used in this analysis to make visualizing the results easier.
+   The amount of variance explained by each eigenvector is visualized to understand the significance of each component.
 
-PCA was performed on both the original power generation values as well as the reconstructed values. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance. Thus, utilizing the principal components of the reconstructed power values may help us achieve better overall anomaly detection.
+This PCA process was performed on  the original power generation values as well as the reconstructed values. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance. 
 
 <p align="center">
   <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="400"/>
 </p>
 
-The reconstructions model the curves well as the mean curve aligns almost perfectly with the mean reconstruction. However, the standard deviations with the reconstructions are generally much lower and smoother than the standard deviations of the original power values.
+The reconstructions model the curves well as the mean curve aligns almost perfectly with the mean reconstruction. The standard deviations with the reconstructions are also generally much lower and smoother than the standard deviations of the original power values.
 
 <p align="center">
   <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="400"/>
 </p>
 
-### Visualizing the Data on the Top Principal Components
+### Visualizing the Data along the Top Two Principal Components
 
 <p align="center">
   <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
@@ -251,7 +260,7 @@ When plotting the data along the top two principal components, four major groupi
   <img src="images/plotting_major_anomalies.png" alt="Plotting Major Anomalies" width="500"/>
 </p>
 
-There appear to be no significant differences between the anomaly groups - in fact, 8/10 are from the same ss_id, 7635, within a fairly small timeframe (2017-11-20 to 2017-12-07). The major connection between all of these outlier points is that they contain extreme maximum and/or minimum power generation values.
+There appear to be no significant differences between the anomaly groups - in fact, 8/10 are from the same ss_id, 7635, within a fairly small timeframe (2017-11-20 to 2017-12-07). The major connection between all of these outlier points is that they contain extreme maximum and/or minimum power generation values. 
 
 ## Exploring the Relationships Between the Top 2 Principal Components
 As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape. Then, the maximum and minimum reconstructed power values are plotted for all points within this range.
@@ -296,13 +305,13 @@ As PC1 increases, the average maximum power generated decreases across this rang
 
 ### Further Anomaly Detection
 
-While there are a few obvious anomalous groupings of points that are located far from the main cluster, there are many located much closer. Other methods will be used to identify which of these points are truly anomalies.
+While there are a few obvious anomalous groupings of points that are located far from the main cluster, there are many, many more located much closer. Other methods will be used to identify which of these points are truly anomalies.
 
 <p align="center">
   <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
 </p>
 
-We will test other various methods of anomaly detection and extract the points which are consistently identified as anomalous. From these points, we will then analyze the PV system configurations to attempt to identify any patterns.
+
 
 ## Conclusion
 
