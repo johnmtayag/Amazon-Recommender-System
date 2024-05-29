@@ -102,6 +102,7 @@ These systems are plotted on a map using iPyLeaflet to identify any patterns bet
 
 
 **Coloring Systems by System Power Rating**:
+
 The majority of solar PV systems throughout the country have very low power output ratings. There are few with higher power output ratings, and these are located close to major population centers.
 
 <center>
@@ -109,6 +110,7 @@ The majority of solar PV systems throughout the country have very low power outp
 </center>
 
 **Coloring Systems by Panel Orientation**:
+
 Most panels throughout the country are oriented at 180 degrees as identified earlier without any particular geographic trends.
 
 <center>
@@ -116,6 +118,7 @@ Most panels throughout the country are oriented at 180 degrees as identified ear
 </center>
 
 **Coloring Systems by Panel Tilt**:
+
 Most panels throughout the country are oriented at about 30 degrees as identified earlier without any particular geographic trends.
 
 <center>
@@ -217,10 +220,12 @@ For this analysis, all basis vectors are used to reconstructed the original curv
   <img src="images/recon_power_gen_curves.png" alt="Reconstructed Power Generation Curves" width="400"/>
 </p>
 
+## PCA for Anomaly Detection
+
 ## Reducing Reconstructed Power Generation Data to 2 Dimensions Using PCA
 Principal Component Analysis (PCA) is used to both reduce the dimensionality of the reconstructed power generation data as well as to enable easier visualization of the results. This process involves several key steps, including computing the covariance matrix, performing eigenvalue decomposition, and projecting the data onto the top principal components.
 
-### Performing PCA on the Data and Visualizing Results
+## Performing PCA on the Data and Visualizing Results
 1. **Compute Covariance Matrix**
    The covariance matrix for the given data column is computed, handling NaN values appropriately. To parallelize this operation, the following steps are taken:
      1. Each set of coefficients is grouped up into an array with a 1 inserted into the first element
@@ -244,7 +249,7 @@ The reconstructions model the curves well as the mean curve aligns almost perfec
   <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="400"/>
 </p>
 
-### Visualizing the Data along the Top Two Principal Components
+### Identifying Major Outliers via PCA
 
 <p align="center">
   <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
@@ -261,6 +266,20 @@ When plotting the data along the top two principal components, four major groupi
 </p>
 
 There appear to be no significant differences between the anomaly groups - in fact, 8/10 are from the same ss_id, 7635, within a fairly small timeframe (2017-11-20 to 2017-12-07). The major connection between all of these outlier points is that they contain extreme maximum and/or minimum power generation values. 
+
+### Identifying Closer Outliers via PCA
+A few more outliers can be identified closer to the center of the distribution - these are data points where PC1 and/or PC2 are larger than 1. The curves of these minor outliers are similarly plotted below.
+
+<p align="center">
+  <img src="images/5_26_closeOutliers.png" alt="Plotting Minor Anomalies" width="500"/>
+</p>
+<p align="center">
+  <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="500"/>
+</p>
+
+Unlike the previous set of outliers, a few patterns become clear here:
+* When PC1 is relatively high, the amplitude of the curve becomes extremely large
+* When PC2 is relatively high, the peak of the curve is offset from the center. In fact, many of these curves appear to show peak power generation at midnight.
 
 ## Exploring the Relationships Between the Top 2 Principal Components
 As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape. Then, the maximum and minimum reconstructed power values are plotted for all points within this range.
@@ -305,20 +324,18 @@ As PC1 increases, the average maximum power generated decreases across this rang
 
 ### Further Anomaly Detection
 
-While there are a few obvious anomalous groupings of points that are located far from the main cluster, there are many, many more located much closer. Other methods will be used to identify which of these points are truly anomalies.
+While there are a few obvious anomalous groupings of points that are located far from the main cluster, there are possibly many, many more located much closer. The below plot shows only data points where both PC1 and PC2 are below 1. At this level of granularity, the use of PC boundaries becomes more nuanced, so we will utilize other methods to further identify any anomalies.
 
 <p align="center">
-  <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
+  <img src="images/5_26_closeOutliers_1.png" alt="Plotting Minor Anomalies" width="500"/>
 </p>
 
-
-
-## Conclusion
+## PCA for Anomaly Detection: Conclusion
 
 ### Effectiveness of PCA in Highlighting Anomalies
 In this analysis, PCA proved to be an effective method for identifying anomalies in the dataset. By transforming the high-dimensional data into two principal components, we were able to visualize and distinguish most normal data points from anomalous ones. The scatter plots of the first two principal components (PC1 and PC2) clearly showed clusters of normal points and isolated anomalies.
 
-The specific anomalies identified had particularly high or low PC1 and PC2 values, which correlated with spikes in the measured power. This indicates that PCA can successfully capture and highlight abnormal variations in the data, particularly those associated with sudden increases in power generation.
+The specific anomalies identified had particularly high or low PC1 and PC2 values, which correlated with spikes in the measured power and/or shifts in the timing of the peak(s). This indicates that PCA can successfully capture and highlight abnormal variations in the data, particularly those associated with sudden increases in power generation.
 
 ### Benefits of Using PCA for Anomaly Detection
 Identifying anomalies via PCA not only helps in detecting outliers but also enables the creation of a labeled dataset. This labeled dataset can then be used to train and evaluate supervised learning models, enhancing our ability to predict and manage anomalies in future data.
@@ -331,7 +348,7 @@ Overall, PCA has shown to be a valuable tool in detecting anomalies within the d
 
 -------------------------------------------
 
-## Model 2
+# Model 2
 Use other methods to identify anomalies closer to the central grouping. Could possibly use the major anomalies as labels for supervised methods
 
 
