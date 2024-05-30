@@ -51,7 +51,7 @@ The metadata dataset has 24,662 rows containing supplementary information on how
 
 ### Setting Up the Environment
 We utilize the following non-standard Python libraries in our analysis - these need to be set up via pip install or conda install methods.
-* ipyleaflet [Setup docs](https://ipyleaflet.readthedocs.io/en/latest/installation/index.html)
+* ipyleaflet --> [[Setup documentation]](https://ipyleaflet.readthedocs.io/en/latest/installation/index.html)
 
 # Methods
 
@@ -69,28 +69,28 @@ There are 36 null values in the metadata dataset, specifically in the operationa
 
 </center>
 
-### Exploring the variables: kwp
+### Exploring the variables: kwp (Solar PV System Power Rating)
 Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers, mainly those with kwp well above 50 kW. 
 
 <center>
 <img src="images/kwp_distribution.png" alt="Distribution of kwp" width="500"/>
 
-<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="350"/>
-<img src="images/hist_kwp.png" alt="Hist of kwp" width="350"/>
+<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="400"/>
+<img src="images/hist_kwp.png" alt="Hist of kwp" width="400"/>
 </center>
 
 ### Exploring the variables: tilt
 Most systems are oriented such that the panels are tilted at about 30 degrees or 35 degrees. The distribution then tapers off fairly uniformly at 10 degrees and 50 degrees. Interestingly, there is a tendency toward angles divisible by 5 degrees noted by prominent spikes in the distribution.
 
 <center>
-<img src="images/tilt_distribution.png" alt="Tilt Distribution" width="600"/>
+<img src="images/tilt_distribution.png" alt="Tilt Distribution" width="500"/>
 </center>
 
 ### Exploring the variables: orientation
 Most systems are oriented such that the panels are oriented about 180 degrees from North. Considering that these systems are located in the UK which is, itself, located at a fairly high latitude, this direction may be maximizing the power generated in this region. However, there is also a notable cluster of systems oriented in the 0-50 degree range which bucks this trend.
 
 <center>
-<img src="images/orientation_distribution.png" alt="Orientation Distribution" width="600"/>
+<img src="images/orientation_distribution.png" alt="Orientation Distribution" width="500"/>
 </center>
 
 ### Exploring the variables: Mapping via iPyLeaflet
@@ -119,7 +119,7 @@ Most panels throughout the country are oriented at 180 degrees as identified ear
 
 **Coloring Systems by Panel Tilt**:
 
-Most panels throughout the country are oriented at about 30 degrees as identified earlier without any particular geographic trends.
+Most panels throughout the country are tilted at about 30 degrees as identified earlier without any particular geographic trends.
 
 <center>
 <img src="images/map_by_tilt.png" alt="Map by Tilt" width="400"/>
@@ -137,11 +137,12 @@ There are 1,824,316 null values in the 30 minute dataset:
 
 </center>
 
-** Number of Timestamped Entries per Year **
+**Number of Timestamped Entries per Year**
+
 Though the dataset spans the range 2010 to 2021, the number of timestamped entries from each year varies greatly. Most of the timestamps in the dataset fall within the range 2015-2021, with the range 2017-2020 being particularly highly represented. 2010 and 2011 are both represented quite poorly, especially relative to all other years in the dataset.
 
 <center>
-  <img src="num_timestamps_yearly.png" alt="Number of Timestamped Entries per Year" width="400"/>
+  <img src="images/num_timestamps_yearly.png" alt="Number of Timestamped Entries per Year" width="400"/>
 </center>
   
 ## Preprocessing
@@ -149,12 +150,8 @@ Though the dataset spans the range 2010 to 2021, the number of timestamped entri
 Steps required for preprocessing:
 * Filter out systems outside of the kwp interquartile range (IQR: 2.28 <= kwp <= 3.42)
 * Convert energy output to power generation rate
-* Filter out timestamps associated with systems on dates that have fewer than 48 timestamps
 * For each ss_id/date grouping with 48 timestamps, get a list of power_kW ordered by timestamp
-* Reconstruct the power value measurements using a Fourier Transform to reduce noise
-* Perform eigendecomposition to get the top two principal components of the data
-
-### Note: Reasons are included here for later reference --> Move them to Discussion
+* Filter out timestamps associated with systems on dates that have fewer than 48 timestamps
 
 ### Preprocessing: Removing Outlier Solar PV Systems
 There are several solar PV systems with notably high outlier power generation ratings, and since the goal of this analysis is to detect anomaly power generation curves, larger curves may end up as false-flags during the detection process. As there are not enough high-capacity systems to make meaningful comparisons, and since the vast majority of systems fall within a tiny subset of kwp values, the dataset was restricted to only systems where the power rating was within the Interquartile Region (between 2.28 and 3.42). This ensures that any detected anomalies will more-likely represent actual anomalies.
@@ -174,6 +171,9 @@ The "generation_wh" column of the 30 minute dataset gives the amount of Watts ge
 
 This formula transforms each value in "generation_wh" from the amount of Watts generated in the last 30 minutes to the average power generated over the same 30 minute interval. This new value is saved as "power_kW."
 
+### Preprocessing: Collecting Timestamp Groupings
+Each entry in the 30 minute dataset consists of the system ID, the timestamp, and the measured energy output. In order to analyze the power output throughout an entire day, the timestamps must first be collected into groups by both system ID and date. As the measurements are taken every 30 minutes, there should be, at most, 48 timestamps per system ID for every date.
+
 ### Preprocessing: Removing Missing Data Points
 The energy output of each solar PV system is aggregated and reported at 30 minute intervals, and so, ideally, each solar PV system would have 48 timestamped reports for each day. Due to the coarse-grained nature of these measurements, any missing data points can greatly affect the shapes of the fitted models, leading to possible false flags. Thus, in order to parameterize the power generation curves as accurately as possible, we need to minimize the number of missing data points.
 
@@ -183,14 +183,12 @@ There are two main categories of missing data points:
 
 All NULL values were removed from the dataset, and out of all pairings of ID-Date, only 144,730 had fewer than 48 timestamps - these were all also removed.
 
-### Preprocessing: Collecting Timestamp Groupings
-
 ## Parameterizing the Daily Power Generation Curves with the Fourier Transform
 The Fourier Transform is used to analyze and parameterize daily power generation curves. This method decomposes power generation data into simpler sinusoidal components, reducing the noise of the measurements and facilitating the identification of patterns and anomalies.
 
 ### Defining Constants and Basis
 The process begins by defining the necessary constants and creating an orthonormal basis of sinusoids. This involves:
-- Setting up 10 pairs of sinusoids at increasing frequencies along with a bias curve.
+- Setting up 10 pairs of sinusoids at increasing frequencies along with a bias curve. This results in a total of 21 basis vectors.
 - Collecting each grouping of 48 time interval measurements into an array for processing.
 
 The basis vectors are constructed as follows:
@@ -198,34 +196,22 @@ The basis vectors are constructed as follows:
 2. Append the desired number of vectors to an array to prepare for matrix operations.
 
 ### Visualizing Basis Sinusoids
-To understand how each sinusoid contributes to the overall model, we plot the first five basis sinusoids. This visualization helps in understanding how the individual components are used in the Fourier Transform.
+To understand how each sinusoid contributes to the overall model, we plot the first five basis sinusoids. This visualization helps in understanding how the individual components are used in the Fourier Transform. The first basis vector is a flat bias curve which helps capture the curve's height while the rest of the basis vectors are sinusoids of varying frequency to capture the complexity of the waveforms.
 
 <p align="center">
   <img src="images/first_five_basis_sinusoids.png" alt="First 5 Basis Sinusoids" width="400"/>
 </p>
 
 ### Comparing Projected Reconstructions to Original Curves
-The power generation curves are approximated by projecting them onto the basis vectors. This comparison shows how increasing the number of basis vector projections makes the resulting reconstruction more accurate.
+The power generation curves are approximated by projecting them onto the basis vectors. This comparison shows how increasing the number of basis vector projections makes the resulting reconstruction more accurate. For our analysis, all 21 basis vectors are used to reconstruct the curves as accurately as possible while still minimizing the overall noise in the measurements.
 
-**Comparison of Original and Approximated Curves**:
 <p align="center">
   <img src="images/compare_power_curves_approx.png" alt="Comparison of Original and Approximated Curves" width="800"/>
 </p>
 
-### Reconstructing Power Generation Data
-For this analysis, all basis vectors are used to reconstructed the original curve.
+## Principal Component Analysis (PCA) for Anomaly Detection
+To aid in the identification of anomalous curves, PCA is used to reduce the dimensionality of the reconstructed power generation data to just 2 dimensions. This simplifies the process while also enabling easier visualization of the results. This process involves several key steps, including computing the covariance matrix, performing eigenvalue decomposition, and projecting the data onto the top principal components.
 
-**Example Reconstructed Power Generation Curve**:
-<p align="center">
-  <img src="images/recon_power_gen_curves.png" alt="Reconstructed Power Generation Curves" width="400"/>
-</p>
-
-## PCA for Anomaly Detection
-
-## Reducing Reconstructed Power Generation Data to 2 Dimensions Using PCA
-Principal Component Analysis (PCA) is used to both reduce the dimensionality of the reconstructed power generation data as well as to enable easier visualization of the results. This process involves several key steps, including computing the covariance matrix, performing eigenvalue decomposition, and projecting the data onto the top principal components.
-
-## Performing PCA on the Data and Visualizing Results
 1. **Compute Covariance Matrix**
    The covariance matrix for the given data column is computed, handling NaN values appropriately. To parallelize this operation, the following steps are taken:
      1. Each set of coefficients is grouped up into an array with a 1 inserted into the first element
@@ -237,49 +223,18 @@ Principal Component Analysis (PCA) is used to both reduce the dimensionality of 
 4. **Plotting Explained Variance**
    The amount of variance explained by each eigenvector is visualized to understand the significance of each component.
 
-This PCA process was performed on  the original power generation values as well as the reconstructed values. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance. 
+This PCA process was performed on the original power generation values as well as the reconstructed values. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance. 
 
 <p align="center">
   <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="400"/>
 </p>
 
-The reconstructions model the curves well as the mean curve aligns almost perfectly with the mean reconstruction. The standard deviations with the reconstructions are also generally much lower and smoother than the standard deviations of the original power values.
+The reconstructions model the curves well as the mean curve aligns almost perfectly with the mean reconstruction. The standard deviations for each timestamp for the reconstructions are also generally much lower and smoother than the standard deviations of the original power values.
 
 <p align="center">
   <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="400"/>
 </p>
 
-### Identifying Major Outliers via PCA
-
-<p align="center">
-  <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
-</p>
-
-When plotting the data along the top two principal components, four major groupings are present:
-1. A central grouping of points
-2. Points where PC1 > 100
-3. Points where PC1 < 100 and PC2 > 100
-4. Points where PC1 < 100 and PC2 < -100
-
-<p align="center">
-  <img src="images/plotting_major_anomalies.png" alt="Plotting Major Anomalies" width="500"/>
-</p>
-
-There appear to be no significant differences between the anomaly groups - in fact, 8/10 are from the same ss_id, 7635, within a fairly small timeframe (2017-11-20 to 2017-12-07). The major connection between all of these outlier points is that they contain extreme maximum and/or minimum power generation values. 
-
-### Identifying Closer Outliers via PCA
-A few more outliers can be identified closer to the center of the distribution - these are data points where PC1 and/or PC2 are larger than 1. The curves of these minor outliers are similarly plotted below.
-
-<p align="center">
-  <img src="images/5_26_closeOutliers.png" alt="Plotting Minor Anomalies" width="500"/>
-</p>
-<p align="center">
-  <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="500"/>
-</p>
-
-Unlike the previous set of outliers, a few patterns become clear here:
-* When PC1 is relatively high, the amplitude of the curve becomes extremely large
-* When PC2 is relatively high, the peak of the curve is offset from the center. In fact, many of these curves appear to show peak power generation at midnight.
 
 ## Exploring the Relationships Between the Top 2 Principal Components
 As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape. Then, the maximum and minimum reconstructed power values are plotted for all points within this range.
@@ -289,16 +244,14 @@ As PCA is used to help identify outliers, it is important to determine any impor
 </p>
 
 ### Analyzing Mean PC1 With Increasing PC2
-The points are sampled such that PC1 is within 0.1 of its mean (-1.21)
+For the following figures, the points are sampled such that PC1 is within 0.1 of its mean (-1.21)
 
-**Visualizing Power Generation Curves With Increasing PC2:**
 <p align="center">
   <img src="images/mean_pc1_curves.png" alt="Visualization of Mean PC1 With Increasing PC2" width="700"/>
 </p>
 
 PC2 appears to correlate with a translation of the bulk of the curve from left to right as it increases.
 
-**Max and Min Power Generation With Increasing PC2:**
 <p align="center">
   <img src="images/mean_pc1_power.png" alt="Max and Min Power Generation With Mean PC1" width="500"/>
 </p>
@@ -306,25 +259,57 @@ PC2 appears to correlate with a translation of the bulk of the curve from left t
 No major patterns with power generation are observed as PC2 increases, though at the edges of the distribution, there appear to be large spikes in maximum power measurements
 
 ### Analyzing Mean PC2 With Increasing PC1
-The points are sampled such that PC2 is within 0.001 of its mean (-0.064)
+For the following figures, the points are sampled such that PC2 is within 0.001 of its mean (-0.064)
 
-**Visualizing Power Generation Curves With Increasing PC1:**
 <p align="center">
   <img src="images/mean_pc2_curves.png" alt="Visualization of Mean PCw With Increasing PC1" width="700"/>
 </p>
 
 PC1 appears to correlate with the height of the spike in power, though similarly to PC2, the height seems to increase at either end of the spectrum.
 
-**Max and Min Power Generation With Increasing PC1:**
 <p align="center">
   <img src="images/mean_pc2_power.png" alt="Max and Min Power Generation With Mean PC2" width="500"/>
 </p>
 
 As PC1 increases, the average maximum power generated decreases across this range. However, the standard deviation is fairly large across the whole range.
 
+### Identifying Major Outliers via PCA
+When plotting the data along the top two principal components, four major groupings are present:
+1. A central grouping of points
+2. Points where PC1 > 100
+3. Points where PC1 < 100 and PC2 > 100
+4. Points where PC1 < 100 and PC2 < -100
+
+The anomaly curves for each example in these groupings are plotted to analyze their shapes.
+
+<p align="center">
+  <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
+</p>
+
+
+<p align="center">
+  <img src="images/plotting_major_anomalies.png" alt="Plotting Major Anomalies" width="700"/>
+</p>
+
+There appear to be no significant differences between these anomaly groups - in fact, 8/10 are from the same ss_id, 7635, within a fairly small timeframe (2017-11-20 to 2017-12-07). The major connection between all of these outlier points is that they contain extreme maximum and/or minimum power generation values. 
+
+### Identifying Closer Outliers via PCA
+After filtering out the major outliers, a few more outliers can be identified located much more closely to the center of the distribution - these are data points where PC1 and/or PC2 are larger than 1. The curves of these minor outliers are similarly plotted below.
+
+<p align="center">
+  <img src="images/5_26_closeOutliers.png" alt="Plotting Minor Anomalies" width="500"/>
+</p>
+<p align="center">
+  <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="700"/>
+</p>
+
+Unlike the previous set of outliers, a few patterns become clear here:
+* When PC1 is relatively high, the amplitude of the curve becomes extremely large
+* When PC2 is relatively high, the peak of the curve is offset from the center. In fact, many of these curves appear to show peak power generation at midnight.
+
 ### Further Anomaly Detection
 
-While there are a few obvious anomalous groupings of points that are located far from the main cluster, there are possibly many, many more located much closer. The below plot shows only data points where both PC1 and PC2 are below 1. At this level of granularity, the use of PC boundaries becomes more nuanced, so we will utilize other methods to further identify any anomalies.
+While there are a few obvious anomalous groupings of points that are located far from the main cluster, there are possibly many, many more located much closer. The below plot shows only data points where both PC1 and PC2 are below 1. At this level of granularity, the use of PC boundaries becomes more nuanced and arbitrary, so we will utilize other methods to further identify any anomalies.
 
 <p align="center">
   <img src="images/5_26_closeOutliers_1.png" alt="Plotting Minor Anomalies" width="500"/>
@@ -333,12 +318,15 @@ While there are a few obvious anomalous groupings of points that are located far
 ## PCA for Anomaly Detection: Conclusion
 
 ### Effectiveness of PCA in Highlighting Anomalies
-In this analysis, PCA proved to be an effective method for identifying anomalies in the dataset. By transforming the high-dimensional data into two principal components, we were able to visualize and distinguish most normal data points from anomalous ones. The scatter plots of the first two principal components (PC1 and PC2) clearly showed clusters of normal points and isolated anomalies.
+In this analysis, PCA proved to be an effective method for identifying anomalies in the dataset. By transforming the high-dimensional data into two principal components, we were able to visualize and distinguish most normal data points from anomalous ones. The scatter plots of the first two principal components (PC1 and PC2) clearly showed clusters of normal points and isolated anomalies. By setting cutoff values in the principal component space, these anomalous points can be easily filtered out of the dataset.
 
 The specific anomalies identified had particularly high or low PC1 and PC2 values, which correlated with spikes in the measured power and/or shifts in the timing of the peak(s). This indicates that PCA can successfully capture and highlight abnormal variations in the data, particularly those associated with sudden increases in power generation.
 
 ### Benefits of Using PCA for Anomaly Detection
-Identifying anomalies via PCA not only helps in detecting outliers but also enables the creation of a labeled dataset. This labeled dataset can then be used to train and evaluate supervised learning models, enhancing our ability to predict and manage anomalies in future data.
+Most real-world datasets don't have labeled anomalies as it can be difficult to identify which points are actually anomalous. The lack of a labeled dataset heavily restricts the number of available anomaly detection methods which often consist of supervised learning approaches. Identifying anomalies via PCA not only helps in detecting outliers but also enables the creation of a labeled dataset. This labeled dataset can then be used to train and evaluate supervised learning models, enhancing our ability to predict and manage anomalies in future data.
+
+### Drawbacks of Relying Only on PCA for Anomaly Detection
+After filtering out the major anomalies identified using PCA, there is a fairly tight cluster of points that remain. In order to further identify anomalies, cutff values have to be set, often arbitrarily. So far, in order to verify that the points are truly anomalies, the power generation curves have to be individually identified. This was fine for the major anomalies as there are relatively few major anomalies. However, this becomes time-consuming and ineffective when approaching the center of the distribution
 
 ### Recommendations for Improvement
 1. **Combine PCA with Other Techniques**: While PCA was effective, combining it with other anomaly detection techniques, such as clustering methods or separate supervised learning using our identified anomalies, could provide a more robust anomaly detection framework. This hybrid approach could help in capturing a wider variety of anomalies that PCA alone might miss.
@@ -348,12 +336,17 @@ Overall, PCA has shown to be a valuable tool in detecting anomalies within the d
 
 -------------------------------------------
 
-# Model 2
-Use other methods to identify anomalies closer to the central grouping. Could possibly use the major anomalies as labels for supervised methods
+## Combining PCA with Other Anomaly Detection Methods
 
+### Statistical Methods
 
+#### Z-Score
 
-## Identifying Patterns Between the Major Anomalies and PV System Configurations (Complete this after further anomaly investigation)
+#### Interquartile Range (IQR)
+
+### Isolation Forest
+
+## Identifying Anomaly-Prone Solar PV System Configurations
 
 vvv Below is old data, but keeping them in here for template purposes
 
@@ -393,6 +386,6 @@ Panel tilt seems to affect the rate of anomalous measurements - panels tilted cl
 
 [Reference for algorithm descriptions](https://www.datacamp.com/tutorial/introduction-to-anomaly-detection)
 
-# Results
+# Discusion
 
-# Discussion
+# Conclusion
