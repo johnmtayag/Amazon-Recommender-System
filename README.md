@@ -73,10 +73,10 @@ There are 36 null values in the metadata dataset, specifically in the operationa
 Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers, mainly those with kwp well above 50 kW. 
 
 <center>
-<img src="images/kwp_distribution.png" alt="Distribution of kwp" width="600"/>
+<img src="images/kwp_distribution.png" alt="Distribution of kwp" width="650"/>
 
-<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="500"/>
-<img src="images/hist_kwp.png" alt="Hist of kwp" width="500"/>
+<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="400"/>
+<img src="images/hist_kwp.png" alt="Hist of kwp" width="400"/>
 </center>
 
 ### Exploring the variables: Panel Tilt
@@ -97,7 +97,7 @@ Most systems are oriented such that the panels are oriented about 180 degrees fr
 These systems are plotted on a map using iPyLeaflet to identify any patterns between system location and configuration parameters. The PV systems in the dataset are mainly located  in England and Scotland and are particularly concentrated in populated regions. However, there are no obvious patterns between where a system is located and the other configuration parameters:
 
 <center>
-<img src="images/map_system_locations.png" alt="System Locations Map" width="400"/>
+<img src="images/map_system_locations.png" alt="System Locations Map" width="300"/>
 </center>
 
 
@@ -106,7 +106,7 @@ These systems are plotted on a map using iPyLeaflet to identify any patterns bet
 The majority of solar PV systems throughout the country have very low power output ratings. There are few with higher power output ratings, and these are located close to major population centers.
 
 <center>
-<img src="images/map_by_kwp.png" alt="Map by kWp" width="500"/>
+<img src="images/map_by_kwp.png" alt="Map by kWp" width="400"/>
 </center>
 
 **Coloring Systems by Panel Orientation**:
@@ -114,7 +114,7 @@ The majority of solar PV systems throughout the country have very low power outp
 Most panels throughout the country are oriented at 180 degrees as identified earlier without any particular geographic trends.
 
 <center>
-<img src="images/map_by_orientation.png" alt="Map by Orientation" width="500"/>
+<img src="images/map_by_orientation.png" alt="Map by Orientation" width="400"/>
 </center>
 
 **Coloring Systems by Panel Tilt**:
@@ -122,7 +122,7 @@ Most panels throughout the country are oriented at 180 degrees as identified ear
 Most panels throughout the country are tilted at about 30 degrees as identified earlier without any particular geographic trends.
 
 <center>
-<img src="images/map_by_tilt.png" alt="Map by Tilt" width="500"/>
+<img src="images/map_by_tilt.png" alt="Map by Tilt" width="400"/>
 </center>
 
 
@@ -131,9 +131,9 @@ There are 1,824,316 null values in the 30 minute dataset:
 
 <center>
 
-|Null Power Generation|Null Timestamps|Null ss_id Values|
-|---------------------|---------------|-----------------|
-|              1824316|              0|                0|
+|Number of Null Power Values|Number of Null Timestamps|Number of Nulls ss_ids|
+|---------------------------|-------------------------|----------------------|
+|                    1824316|                        0|                     0|
 
 </center>
 
@@ -257,7 +257,20 @@ With these scores, we plot the data once again along the principal component axe
 ## Testing Supervised Anomaly Detection Methods Using Labeled Data
 
 ## Identifying Correlations Between System Configurations and Outlier Frequency
-The ss_ids of the outliers identified using the above methods are then used to try and note any correlations between a given system configuration parameter and the rate of anomalous curve occurences. To achieve this, a series of histograms are generated to compare the configuration parameters of each group of identified anomalies with the rest of the data.
+To see if there is any correlation between the rate of occurence of the identified anomalies with any of the PV system configuration parameters, the data is partitioned into two main groups - outliers and all points. Then, the distributions are visualized with histograms. Only the following outlier subgroups are included for these visualizations:
+
+* Major and close anomalies identified during PCA
+* Interquartile Method (Low PC1 / Low PC2 only)
+* Z-Score Method (Low PC1 / Low PC2 only)
+* Isolation Forest (Score < 0.746)
+
+Similarly, only the following parameters are included in this analysis:
+
+* System Power Rating
+* Latitude
+* Longitude
+* Panel Orientation
+* Panel Tilt
 
 # Results
 
@@ -265,13 +278,13 @@ The ss_ids of the outliers identified using the above methods are then used to t
 To understand how reconstructing the power generation curves via the Fourier Transform impacts our analysis, we perform PCA on both and plot the amount of variance explained by both sets of eigenvectors. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance.
 
 <p align="center">
-  <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="500"/>
+  <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="400"/>
 </p>
 
 The resulting reconstructions model the overall average curve quite well, but they also greatly reduce the standard deviation of power values measured at each timestamp.
 
 <p align="center">
-  <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="500"/>
+  <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="600"/>
 </p>
 
 ## Exploring the Relationships Between the Top 2 Principal Components
@@ -358,7 +371,7 @@ As previously stated, the interquartile range method identifies outliers along a
 **Visualizing the Outliers**
 
 <p align="center">
-  <img src="images/iqr_outliers_visualized.png" alt="Visualizing Minor Anomalies" width="500"/>
+  <img src="images/iqr_outliers_visualized.png" alt="Visualizing Minor Anomalies" width="600"/>
 </p>
 
 **Visualizing the Average Outlier Curves**
@@ -393,7 +406,7 @@ As previously stated, the Z-score method identifies outliers along a single axis
 **Visualizing the Outliers**
 
 <p align="center">
-  <img src="images/std_outliers_visualized.png" alt="Visualizing Minor Anomalies" width="500"/>
+  <img src="images/std_outliers_visualized.png" alt="Visualizing Minor Anomalies" width="600"/>
 </p>
 
 **Visualizing the Average Outlier Curves**
@@ -425,7 +438,7 @@ Overall, the resulting scores were all quite similar, but the combination of 7 t
 **Distribution of Mean Scores and Individual Standard Deviations**
 
 <p align="center">
-  <img src="images/7t10s_distribution.png" alt="Distributions of scores" width="800"/>
+  <img src="images/7t10s_distribution.png" alt="Distributions of scores" width="750"/>
 </p>
 
 **Visualizing the Resulting Outlier Scores**
@@ -447,11 +460,41 @@ Overall, the resulting scores were all quite similar, but the combination of 7 t
 ## Supervised Anomaly Detection with Extracted Labeled Anomalies
 
 ## Identifying Correlations Between System Configurations and Outlier Frequency
-To check whether or not
+The following plots show the shapes of the distribution in the metadata variables according to anomaly grouping.
+
+**Distributions of kwp**
+
+Compared to the distribution for all points, each of the anomaly groups had higher anomaly counts associated with systems in the higher kwp range.
+
+<p align="center">
+  <img src="images/outliers_kwp.png" alt="Distribution by Anomaly Grouping: kwp" width="650"/>
+</p>
+
+**Distributions of latitude**
+
+<p align="center">
+  <img src="images/outliers_latitude.png" alt="Distribution by Anomaly Grouping: latitude" width="650"/>
+</p>
+
+**Distributions of longitude**
+
+<p align="center">
+  <img src="images/outliers_longitude.png" alt="Distribution by Anomaly Grouping: longitude" width="650"/>
+</p>
+
+**Distributions of panel orientation**
+
+<p align="center">
+  <img src="images/outliers_orientation.png" alt="Distribution by Anomaly Grouping: orientation" width="650"/>
+</p>
+
+**Distributions of panel tilt**
+
+<p align="center">
+  <img src="images/outliers_tilt.png" alt="Distribution by Anomaly Grouping: tilt" width="650"/>
+</p>
 
 # Discussion
-
-## Explaining the Main Preprocessing Steps:
 
 ### Preprocessing: Removing Outlier Solar PV Systems
 There are several solar PV systems with notably high outlier power generation ratings, and since the goal of this analysis is to detect anomaly power generation curves, larger curves may end up as false-flags during the detection process. As there are not enough high-capacity systems to make meaningful comparisons, and since the vast majority of systems fall within a tiny subset of kwp values, the dataset was restricted to only systems where the power rating was within the Interquartile Region (between 2.28 and 3.42). This ensures that any detected anomalies will more-likely represent actual anomalies.
@@ -527,10 +570,14 @@ Without extra information, it is hard to explain why the average curve seems to 
   <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="500"/>
 </p>
 
+## Analyzing the Effectivness of Supervised Outlier Detection Methods
+
+## Analyzing the Distributions of System Configurations Within Anomaly Groupings
+Overall, the only variable that appears to correlate strongly with the occurence of anomalies is kwp. This makes sense as many of the average "anomalous" curves were simply normal curves with higher peaks. The average outlier curves identified with both statistical methods had fairly normal shapes that had peaks at 3 kW or lower. Similarly, the average curves identified using the isolation forest followed a similar pattern until the score dropped to 0.65 or below. However, given that the kwp cutoff for solar PV systems to be included in this analysis was 3.42, these "anomalies" may actual be legitimate curves.
+
+This result seems to suggest that, in order to ensure that all identified curves are truly anomalous, the dataset may need to be further restricted to smaller systems.
+
 # Conclusion
-
-## Reorganize this section and add more conclusions based on the other analyses
-
 
 ## PCA for Anomaly Detection: Conclusion
 
@@ -552,8 +599,4 @@ After filtering out the major anomalies identified using PCA, there is a fairly 
 Overall, PCA has shown to be a valuable tool in detecting anomalies within the dataset, especially those related to power spikes. Moreover, the identification of anomalies via PCA helps in creating a labeled dataset, which is crucial for training supervised learning models. By incorporating additional techniques and insights, we can further enhance the model's effectiveness and accuracy, providing a robust framework for anomaly detection and management.
 
 # Collaboration
-
-
-###############################################
-
 
