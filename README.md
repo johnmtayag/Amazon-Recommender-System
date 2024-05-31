@@ -73,10 +73,10 @@ There are 36 null values in the metadata dataset, specifically in the operationa
 Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers, mainly those with kwp well above 50 kW. 
 
 <center>
-<img src="images/kwp_distribution.png" alt="Distribution of kwp" width="500"/>
+<img src="images/kwp_distribution.png" alt="Distribution of kwp" width="600"/>
 
-<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="400"/>
-<img src="images/hist_kwp.png" alt="Hist of kwp" width="400"/>
+<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="500"/>
+<img src="images/hist_kwp.png" alt="Hist of kwp" width="500"/>
 </center>
 
 ### Exploring the variables: Panel Tilt
@@ -97,7 +97,7 @@ Most systems are oriented such that the panels are oriented about 180 degrees fr
 These systems are plotted on a map using iPyLeaflet to identify any patterns between system location and configuration parameters. The PV systems in the dataset are mainly located  in England and Scotland and are particularly concentrated in populated regions. However, there are no obvious patterns between where a system is located and the other configuration parameters:
 
 <center>
-<img src="images/map_system_locations.png" alt="System Locations Map" width="300"/>
+<img src="images/map_system_locations.png" alt="System Locations Map" width="400"/>
 </center>
 
 
@@ -106,7 +106,7 @@ These systems are plotted on a map using iPyLeaflet to identify any patterns bet
 The majority of solar PV systems throughout the country have very low power output ratings. There are few with higher power output ratings, and these are located close to major population centers.
 
 <center>
-<img src="images/map_by_kwp.png" alt="Map by kWp" width="400"/>
+<img src="images/map_by_kwp.png" alt="Map by kWp" width="500"/>
 </center>
 
 **Coloring Systems by Panel Orientation**:
@@ -114,7 +114,7 @@ The majority of solar PV systems throughout the country have very low power outp
 Most panels throughout the country are oriented at 180 degrees as identified earlier without any particular geographic trends.
 
 <center>
-<img src="images/map_by_orientation.png" alt="Map by Orientation" width="400"/>
+<img src="images/map_by_orientation.png" alt="Map by Orientation" width="500"/>
 </center>
 
 **Coloring Systems by Panel Tilt**:
@@ -122,7 +122,7 @@ Most panels throughout the country are oriented at 180 degrees as identified ear
 Most panels throughout the country are tilted at about 30 degrees as identified earlier without any particular geographic trends.
 
 <center>
-<img src="images/map_by_tilt.png" alt="Map by Tilt" width="400"/>
+<img src="images/map_by_tilt.png" alt="Map by Tilt" width="500"/>
 </center>
 
 
@@ -142,7 +142,7 @@ There are 1,824,316 null values in the 30 minute dataset:
 Though the dataset spans the range 2010 to 2021, the number of timestamped entries from each year varies greatly. Most of the timestamps in the dataset fall within the range 2015-2021, with the range 2017-2020 being particularly highly represented. 2010 and 2011 are both represented quite poorly, especially relative to all other years in the dataset.
 
 <center>
-  <img src="images/num_timestamps_yearly.png" alt="Number of Timestamped Entries per Year" width="400"/>
+  <img src="images/num_timestamps_yearly.png" alt="Number of Timestamped Entries per Year" width="500"/>
 </center>
   
 ## Main Preprocessing
@@ -247,7 +247,7 @@ However, Pyspark does not have any built-in isolation forest algorithms - instea
 To help visualize this process, the following figure shows 4 randomly generated boundary lines along with the resulting scores assigned to each group.
 
 <p align="center">
-  <img src="images/iforest_example_boundary_lines.png" alt="Example Isolation Forest Boundary Lines" width="600"/>
+  <img src="images/iforest_example_boundary_lines.png" alt="Example Isolation Forest Boundary Lines" width="800"/>
 </p>
 
 This method relies on both randomness and the aggregated results of weak learner predictions, so there can be a lot of variability in results. Thus, averaging the results across multiple trees and even multiple forests is ideal. To maximize the likelihood
@@ -265,13 +265,13 @@ The ss_ids of the outliers identified using the above methods are then used to t
 To understand how reconstructing the power generation curves via the Fourier Transform impacts our analysis, we perform PCA on both and plot the amount of variance explained by both sets of eigenvectors. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance.
 
 <p align="center">
-  <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="400"/>
+  <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="500"/>
 </p>
 
 The resulting reconstructions model the overall average curve quite well, but they also greatly reduce the standard deviation of power values measured at each timestamp.
 
 <p align="center">
-  <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="400"/>
+  <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="500"/>
 </p>
 
 ## Exploring the Relationships Between the Top 2 Principal Components
@@ -425,7 +425,7 @@ Overall, the resulting scores were all quite similar, but the combination of 7 t
 **Distribution of Mean Scores and Individual Standard Deviations**
 
 <p align="center">
-  <img src="images/7t10s_distribution.png" alt="Distributions of scores" width="500"/>
+  <img src="images/7t10s_distribution.png" alt="Distributions of scores" width="800"/>
 </p>
 
 **Visualizing the Resulting Outlier Scores**
@@ -526,18 +526,7 @@ Without extra information, it is hard to explain why the average curve seems to 
 
 # Conclusion
 
-# Collaboration
-
-
-###############################################
-
-Take everything below and separate into the above categories
-
-
-
-
-
-### Further Anomaly Detection
+## Reorganize this section and add more conclusions based on the other analyses
 
 
 ## PCA for Anomaly Detection: Conclusion
@@ -559,47 +548,9 @@ After filtering out the major anomalies identified using PCA, there is a fairly 
 ### Final Thoughts
 Overall, PCA has shown to be a valuable tool in detecting anomalies within the dataset, especially those related to power spikes. Moreover, the identification of anomalies via PCA helps in creating a labeled dataset, which is crucial for training supervised learning models. By incorporating additional techniques and insights, we can further enhance the model's effectiveness and accuracy, providing a robust framework for anomaly detection and management.
 
--------------------------------------------
+# Collaboration
 
 
-vvv Below is old data, but keeping them in here for template purposes
-
-Out of nearly 55 million data points, only 609,778 were identified as outliers whose principal components fell outside of the bounding box. To identify any patterns, the distributions between various configuration settings are compared here.
-
-<p align="center">
-  <img src="images/pca_outliers_kwp.png" alt="Comparing Distributions Between All Systems and Identified Outliers (PV System Rating)" width="500"/>
-</p>
-
-Most systems represented in this dataset have a power rating centered around 3 kW. However, outlier data points are spread out across the entire axis. There are two notable spikes in the distribution: one with systems rated at around 30 kW and another much larger one with systems rated at around 50 kW.
-These could indicate that certain PV systems entirely have a high rate of anomalous measurements.
-
-<p align="center">
-  <img src="images/pca_outliers_latitude.png" alt="Comparing Distributions Between All Systems and Identified Outliers (Latitude)" width="500"/>
-</p>
-
-Most anomalous measures seem to come from latitudes between 51 and 52 with another spike at around latitude 55. While the histogram shapes are very similar, the outliers have a much tighter distribution.
-
-<p align="center">
-  <img src="images/pca_outliers_longitude.png" alt="Comparing Distributions Between All Systems and Identified Outliers (Longitude)" width="500"/>
-</p>
-
-There doesn't seem to be much indication that the longitude of each system affects the rate of anomalous measurements.
-
-<p align="center">
-  <img src="images/pca_outliers_orientation.png" alt="Comparing Distributions Between All Systems and Identified Outliers (Orientation)" width="500"/>
-</p>
-
-Overall, the overall panel orientation distribution is very similar to the anomalous panel distributions, but the outlier distribution is slightly more left-skewed.
-
-<p align="center">
-  <img src="images/pca_outliers_tilt.png" alt="Comparing Distributions Between All Systems and Identified Outliers (Tilt)" width="500"/>
-</p>
-
-Panel tilt seems to affect the rate of anomalous measurements - panels tilted closer to horizontal (angles below 30 degrees) appear to produce more anomalous measurements than those tilted more vertically.
+###############################################
 
 
-[Reference for algorithm descriptions](https://www.datacamp.com/tutorial/introduction-to-anomaly-detection)
-
-# Discusion
-
-# Conclusion
