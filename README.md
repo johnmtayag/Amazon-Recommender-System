@@ -74,6 +74,10 @@ Most of the PV systems represented in this dataset have fairly low power ratings
 
 <center>
 <img src="images/kwp_distribution.png" alt="Distribution of kwp" width="650"/>
+</center>
+
+<center>
+
 <p float="left">
 <img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="400"/>
 <img src="images/hist_kwp.png" alt="Hist of kwp" width="400"/>
@@ -443,13 +447,12 @@ Overall, the resulting scores were all quite similar, but the combination of 7 t
 
 **Visualizing the Resulting Outlier Scores**
 
-<p align="center">
-  <img src="images/visualizing_score_distribution.png" alt="Distributions of scores" width="500"/>
+<center>
+<p float="left">
+  <img src="images/visualizing_score_distribution.png" alt="Distributions of scores" width="380"/>
+  <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Change in Average Curve as Outlier Score changes" width="380"/>
 </p>
-
-<p align="center">
-  <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Distributions of scores" width="500"/>
-</p>
+</center>
 
 **Visualizing the Average Curve as the Outlier Score Changes**
 
@@ -563,8 +566,8 @@ Without extra information, it is hard to explain why the average curve seems to 
 
 <center>
 <p float="left">
-  <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Distributions of scores" width="455"/>
-  <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="480"/>
+  <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Distributions of scores" width="380"/>
+  <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="400"/>
 </p>
 </center>
 
