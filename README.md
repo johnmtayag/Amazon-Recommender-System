@@ -442,17 +442,14 @@ Overall, the resulting scores were all quite similar, but the combination of 7 t
 **Distribution of Mean Scores and Individual Standard Deviations**
 
 <p align="center">
-  <img src="images/7t10s_distribution.png" alt="Distributions of scores" width="750"/>
+  <img src="images/7t10s_distribution.png" alt="Distributions of scores" width="800"/>
 </p>
 
 **Visualizing the Resulting Outlier Scores**
 
-<center>
-<p float="left">
-  <img src="images/visualizing_score_distribution.png" alt="Distributions of scores" width="380"/>
-  <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Change in Average Curve as Outlier Score changes" width="380"/>
+<p align="center">
+  <img src="images/visualizing_score_distribution_combined.png" alt="Distributions of scores" width="800"/>
 </p>
-</center>
 
 **Visualizing the Average Curve as the Outlier Score Changes**
 
