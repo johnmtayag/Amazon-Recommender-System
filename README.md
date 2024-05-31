@@ -69,7 +69,7 @@ There are 36 null values in the metadata dataset, specifically in the operationa
 
 </center>
 
-### Exploring the variables: kwp (Solar PV System Power Rating)
+### Exploring the variables: Kwp (Solar PV System Power Rating)
 Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers, mainly those with kwp well above 50 kW. 
 
 <center>
@@ -79,14 +79,14 @@ Most of the PV systems represented in this dataset have fairly low power ratings
 <img src="images/hist_kwp.png" alt="Hist of kwp" width="400"/>
 </center>
 
-### Exploring the variables: tilt
+### Exploring the variables: Panel Tilt
 Most systems are oriented such that the panels are tilted at about 30 degrees or 35 degrees. The distribution then tapers off fairly uniformly at 10 degrees and 50 degrees. Interestingly, there is a tendency toward angles divisible by 5 degrees noted by prominent spikes in the distribution.
 
 <center>
 <img src="images/tilt_distribution.png" alt="Tilt Distribution" width="500"/>
 </center>
 
-### Exploring the variables: orientation
+### Exploring the variables: Panel Orientation
 Most systems are oriented such that the panels are oriented about 180 degrees from North. Considering that these systems are located in the UK which is, itself, located at a fairly high latitude, this direction may be maximizing the power generated in this region. However, there is also a notable cluster of systems oriented in the 0-50 degree range which bucks this trend.
 
 <center>
@@ -305,7 +305,7 @@ When plotting the data along the top two principal components, four major groupi
 3. Points where PC1 < 100 and PC2 > 100
 4. Points where PC1 < 100 and PC2 < -100
 
-The anomaly curves for each example in these groupings are plotted to analyze their shapes.
+In total, 10 major anomalies were identified. The anomaly curves for each example in these groupings are plotted to analyze their shapes.
 
 <p align="center">
   <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
@@ -316,7 +316,7 @@ The anomaly curves for each example in these groupings are plotted to analyze th
 </p>
 
 ### Identifying Closer Outliers via PCA
-After filtering out the major outliers, a few more outliers can be identified located much more closely to the center of the distribution - these are data points where PC1 and/or PC2 are larger than 1. The curves of these minor outliers are similarly plotted below.
+After filtering out the major outliers, a total of 7 more outliers can be identified located much more closely to the center of the distribution - these are data points where PC1 and/or PC2 are larger than 1. The curves of these minor outliers are similarly plotted below.
 
 <p align="center">
   <img src="images/5_26_closeOutliers.png" alt="Plotting Minor Anomalies" width="500"/>
@@ -324,6 +324,127 @@ After filtering out the major outliers, a few more outliers can be identified lo
 <p align="center">
   <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="700"/>
 </p>
+
+## Further Anomaly Detection Using Statistical Methods
+To aid in the further identification of outliers, the previously identified points were filtered out to minimize the region of interest:
+
+<p align="center">
+  <img src="images/5_26_closeOutliers_1.png" alt="Visualizing Minor Anomalies" width="500"/>
+</p>
+
+### Interquartile Range Method
+As previously stated, the interquartile range method identifies outliers along a single axis using Q1 - 1.5\*IQR and Q3 + 1.5\*IQR as the cutoff values to define outlier points.
+
+**PC1 Outlier Statistics**:
+
+<p align="center">
+
+|High Cutoff|Low Cutoff|Number of High Outliers| Number of Low Outliers|
+|-----------|----------|-----------------------|-----------------------|
+|     1.5374|   -3.8405|                      0|                  16108|
+
+</p>
+
+**PC2 Outlier Statistics**:
+
+<p align="center">
+
+|High Cutoff|Low Cutoff|Number of High Outliers| Number of Low Outliers|
+|-----------|----------|-----------------------|-----------------------|
+|     1.5374|   -3.8405|                  93105|                   2463|
+
+</p>
+
+**Visualizing the Outliers**
+
+<p align="center">
+  <img src="images/iqr_outliers_visualized.png" alt="Visualizing Minor Anomalies" width="500"/>
+</p>
+
+**Visualizing the Average Outlier Curves**
+
+<p align="center">
+  <img src="images/iqr_outliers_curves.png" alt="Visualizing Minor Anomalies" width="700"/>
+</p>
+
+### Z-Score Method
+As previously stated, the Z-score method identifies outliers along a single axis using the mean +- 3 standard deviations as the cutoff values to define outlier points.
+
+**PC1 Outlier Statistics**:
+
+<p align="center">
+
+|High Cutoff|Low Cutoff|Number of High Outliers| Number of Low Outliers|
+|-----------|----------|-----------------------|-----------------------|
+|     1.3410|   -3.7621|                      0|                  26770|
+
+</p>
+
+**PC2 Outlier Statistics**:
+
+<p align="center">
+
+|High Cutoff|Low Cutoff|Number of High Outliers| Number of Low Outliers|
+|-----------|----------|-----------------------|-----------------------|
+|     0.0847|   -0.2128|                  84879|                   3186|
+
+</p>
+
+**Visualizing the Outliers**
+
+<p align="center">
+  <img src="images/std_outliers_visualized.png" alt="Visualizing Minor Anomalies" width="500"/>
+</p>
+
+**Visualizing the Average Outlier Curves**
+
+<p align="center">
+  <img src="images/std_outliers_curves.png" alt="Visualizing Minor Anomalies" width="700"/>
+</p>
+
+## Further Anomaly Detection Using Isolation Forests
+The isolation forest algorithm incorporates a lot of randomness, so to obtain stable results, a high number of trees and splits is ideal. However, the more trees and splits utilized, the more costly the algorithm becomes (in terms of both time-elapsed and memory requirements). Thus, a series of tests were run, each using a different combination of the main two hyperparameters: The number of trees and the number of splits per tree. Each combination was run 5 times with the resulting score for each point averaged across all 5 runs.
+
+<p align="center">
+
+|Number of Trees|Number of Splits|Minimum Score| Maximum Score|Mean Score|Standard Deviation|
+|---------------|----------------|-------------|--------------|----------|------------------|
+|              1|              10|       0.4112|        0.9017|    0.8699|            0.0407|
+|              1|              30|       0.3994|        0.8858|    0.8470|            0.0475|
+|              3|              10|       0.4117|        0.9212|    0.8910|            0.0308|
+|              3|              30|       0.4247|        0.9187|    0.8908|            0.0344|
+|              5|              10|       0.4243|        0.9181|    0.8895|            0.0377|
+|              5|              30|       0.4295|        0.9165|    0.8880|            0.0345|
+|              7|              10|       0.4379|        0.9235|    0.8945|            0.0298|
+|              7|              30|       0.4409|        0.9247|    0.8962|            0.0358|
+
+</p>
+
+Overall, the resulting scores were all quite similar, but the combination of 7 trees with 10 splits had the lowest overall standard deviation in scores, so these hyperparameters were chosen. For each point in this resulting model, the individual mean score and standard deviation across runs was taken, and the shapes of the distributions were visualized.
+
+**Distribution of Mean Scores and Individual Standard Deviations**
+
+<p align="center">
+  <img src="images/7t10s_distribution.png" alt="Distributions of scores" width="500"/>
+</p>
+
+**Visualizing the Resulting Outlier Scores**
+
+<p align="center">
+  <img src="images/visualizing_score_distribution.png" alt="Distributions of scores" width="500"/>
+</p>
+
+<p align="center">
+  <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Distributions of scores" width="500"/>
+</p>
+
+**Visualizing the Average Curve as the Outlier Score Changes**
+
+<p align="center">
+  <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="500"/>
+</p>
+
+## Supervised Anomaly Detection with Extracted Labeled Anomalies
 
 # Discussion
 
@@ -371,7 +492,7 @@ Though there are 3 clearly separated groups of anomalies, there actually is no s
   <img src="images/plotting_major_anomalies.png" alt="Plotting Major Anomalies" width="700"/>
 </p>
 
-### Closer Outliers
+### Close Outliers
 After filtering out the major anomalies, the next set of anomalies can be easily separated from the central cluster. Unlike the previous set of outliers though, a few patterns become clear when analyzing these curves:
 
 * When PC1 is relatively high, the amplitude of the curve becomes extremely large. This likely also occurs when PC1 is relatively low.
@@ -383,6 +504,25 @@ These properties correlate with the choice of basis vectors. As stated previousl
   <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="700"/>
 </p>
 
+## Analyzing the Effectiveness of the Statistical Methods
+Both the interquartile method and the z-score method resulted in very similar cutoff values and very similar average curve shapes for each grouping of outliers. Both methods resulted in no high PC1 outliers, and both methods had high PC2 outliers that closely resembled the normal curve. Also, both methods show the low PC2 outliers as having skinnier distributions compared to the low PC1 outlier group.
+
+Neither method worked particularly well, and this is likely attributed to the distribution not being normal. As can be seen in the below figure, the distribution is highly left skewed, particularly along the PC1 axis. Both methods also set a single boundary line in either direction which limits any further analysis as only a single curve can be generated for each anomaly grouping.
+
+## Analyzing the Effectiveness of the Isolation Forest
+The isolation forest was quite effective in separating out outliers from the central cluster in all directions. Most of the points with the lowest scores are located far to the left of the distribution, and the score increases when approaching the mean. These scores also help to further organize the anomalies into subcategories correlating with distance from the mean.
+
+Plotting the average reconstruction curve as the score decreases is quite interesting - as the outlier score decreases, the height of the curve's peak increases and slowly splits into one tall curve and one slightly smaller peak to the right. Also, the variance seems to increase as the overall curve's shape becomes more jagged. 
+
+Without extra information, it is hard to explain why the average curve seems to split in two so cleanly. One possible explanation could be the prevalence of cloudy/rainy weather in the UK causing anomalous dips in power generation.
+
+<p align="center">
+  <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Distributions of scores" width="500"/>
+</p>
+
+<p align="center">
+  <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="500"/>
+</p>
 
 # Conclusion
 
