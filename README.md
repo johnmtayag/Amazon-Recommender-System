@@ -131,9 +131,9 @@ There are 1,824,316 null values in the 30 minute dataset:
 
 <center>
 
-|numNulls_generation|numNulls_timestamp|numNulls_ss_id|
-|-------------------|------------------|--------------|
-|            1824316|                 0|             0|
+|Null Power Generation|Null Timestamps|Null ss_id Values|
+|---------------------|---------------|-----------------|
+|              1824316|              0|                0|
 
 </center>
 
@@ -445,6 +445,9 @@ Overall, the resulting scores were all quite similar, but the combination of 7 t
 </p>
 
 ## Supervised Anomaly Detection with Extracted Labeled Anomalies
+
+## Identifying Correlations Between System Configurations and Outlier Frequency
+To check whether or not
 
 # Discussion
 
