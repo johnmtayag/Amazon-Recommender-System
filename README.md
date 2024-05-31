@@ -197,6 +197,19 @@ To aid in the identification of anomalous curves, PCA is used to reduce the dime
 
 After projecting the data, a series of cutoff values along the top two principal components are used to identify anomalies at different scales until the PCA method becomes less effective. The anomalies detected here are separated out of the original dataset and are marked as labeled anomalies for later supervised anomaly detection methods.
 
+### Exploring the Relationships Between the Top 2 Principal Components
+As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were first filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape as the value of one of the principal components increases. Then, the maximum and minimum reconstructed power values are plotted for all points within this range to understand any relationships between the principal components and the power generation curves.
+
+<p align="center">
+  <img src="images/main_cluster_with_mean.png" alt="Plotting the Main Cluster" width="500"/>
+</p>
+
+The below plot shows the distribution of points after all major outliers identified during the PCA process. At this level of granularity, the use of PC boundaries becomes more nuanced and arbitrary, so we utilize other methods to further identify any anomalies.
+
+<p align="center">
+  <img src="images/5_26_closeOutliers_1.png" alt="Plotting Minor Anomalies" width="500"/>
+</p>
+
 ## Further Anomaly Detection Using Statistical Methods
 After the initial PCA anomaly filtering, two different statistical approaches are used to identify anomalous ranges:
 
@@ -210,7 +223,7 @@ After the initial PCA anomaly filtering, two different statistical approaches ar
     2. High Cutoff = Mean + 3 x STD
 
 ## Further Anomaly Detection Using Isolation Forests
-An isolation forest is an unsupervised machine learning algorithm which utilizes binary trees to detect anomalies. The algorithm relies on the fact that data points located further away from the centers of distribution are more likely to be quickly separated from the rest of the points when splitting the variable space.
+An isolation forest is an unsupervised machine learning algorithm which utilizes binary trees to detect anomalies. The algorithm relies on the fact that data points located further away from the centers of distribution are more likely to be quickly separated from the rest of the points when randomly splitting the variable space.
 
 **Typical Isolation Forest Process**:
 * For each tree:
@@ -237,16 +250,80 @@ To help visualize this process, the following figure shows 4 randomly generated 
   <img src="images/iforest_example_boundary_lines.png" alt="Example Isolation Forest Boundary Lines" width="600"/>
 </p>
 
-This method relies on both randomness and the aggregated results of weak learner predictions, so there can be a lot of variability in results. Thus, averaging the results across multiple trees and even multiple forests is ideal. For this analysis, we take the average scores over 5 runs using 7 trees with 10 splits each to identify further anomalies.
+This method relies on both randomness and the aggregated results of weak learner predictions, so there can be a lot of variability in results. Thus, averaging the results across multiple trees and even multiple forests is ideal. To maximize the likelihood
 
 With these scores, we plot the data once again along the principal component axes, but now we can color each point according to its outlier score. We also plot the change in the average reconstructed power curve as the outlier score decreases.
 
-## Supervised Anomaly Detection Using Labeled Data
+## Testing Supervised Anomaly Detection Methods Using Labeled Data
 
 ## Identifying Correlations Between System Configurations and Outlier Frequency
 The ss_ids of the outliers identified using the above methods are then used to try and note any correlations between a given system configuration parameter and the rate of anomalous curve occurences. To achieve this, a series of histograms are generated to compare the configuration parameters of each group of identified anomalies with the rest of the data.
 
 # Results
+
+## Comparing the Effectiveness of PCA Performed on the Original Power Values Versus the Reconstructed Values
+To understand how reconstructing the power generation curves via the Fourier Transform impacts our analysis, we perform PCA on both and plot the amount of variance explained by both sets of eigenvectors. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance.
+
+<p align="center">
+  <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="400"/>
+</p>
+
+The resulting reconstructions model the overall average curve quite well, but they also greatly reduce the standard deviation of power values measured at each timestamp.
+
+<p align="center">
+  <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="400"/>
+</p>
+
+## Exploring the Relationships Between the Top 2 Principal Components
+
+### Analyzing Mean PC1 With Increasing PC2
+For the following figures, all points where PC1 is within 0.1 of its mean (-1.21) are extracted. Six points are then randomly sampled to visualize how the curves change as PC2 increases along the range. The next figure shows the maximum and minimum power generation values for each point within the range ordered by PC2 value.
+
+<p align="center">
+  <img src="images/mean_pc1_curves.png" alt="Visualization of Mean PC1 With Increasing PC2" width="700"/>
+</p>
+
+<p align="center">
+  <img src="images/mean_pc1_power.png" alt="Max and Min Power Generation With Mean PC1" width="500"/>
+</p>
+
+### Analyzing Mean PC2 With Increasing PC1
+For the following figures, all points where PC2 is within 0.001 of its mean (-0.064) are extracted. Again, six points are then randomly sampled to visualize how the curves change as PC1 increases along the range. The next figure shows the maximum and minimum power generation values for each point within the range ordered by PC1 value.
+
+<p align="center">
+  <img src="images/mean_pc2_curves.png" alt="Visualization of Mean PC2 With Increasing PC1" width="700"/>
+</p>
+
+<p align="center">
+  <img src="images/mean_pc2_power.png" alt="Max and Min Power Generation With Mean PC2" width="500"/>
+</p>
+
+### Identifying Major Outliers via PCA
+When plotting the data along the top two principal components, four major groupings are present:
+1. A central grouping of points
+2. Points where PC1 > 100
+3. Points where PC1 < 100 and PC2 > 100
+4. Points where PC1 < 100 and PC2 < -100
+
+The anomaly curves for each example in these groupings are plotted to analyze their shapes.
+
+<p align="center">
+  <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
+</p>
+
+<p align="center">
+  <img src="images/plotting_major_anomalies.png" alt="Plotting Major Anomalies" width="700"/>
+</p>
+
+### Identifying Closer Outliers via PCA
+After filtering out the major outliers, a few more outliers can be identified located much more closely to the center of the distribution - these are data points where PC1 and/or PC2 are larger than 1. The curves of these minor outliers are similarly plotted below.
+
+<p align="center">
+  <img src="images/5_26_closeOutliers.png" alt="Plotting Minor Anomalies" width="500"/>
+</p>
+<p align="center">
+  <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="700"/>
+</p>
 
 # Discussion
 
@@ -270,17 +347,42 @@ The "generation_wh" column of the 30 minute dataset gives the amount of Watts ge
 
 This formula transforms each value in "generation_wh" from the amount of Watts generated in the last 30 minutes to the average power generated over the same 30 minute interval. This new value is saved as "power_kW."
 
-### Preprocessing: Collecting Timestamp Groupings
-Each entry in the 30 minute dataset consists of the system ID, the timestamp, and the measured energy output. In order to analyze the power output throughout an entire day, the timestamps must first be collected into groups by both system ID and date. As the measurements are taken every 30 minutes, there should be, at most, 48 timestamps per system ID for every date.
+### Preprocessing: Collecting Timestamp Groupings and Removing Missing Data Points
 
-### Preprocessing: Removing Missing Data Points
-The energy output of each solar PV system is aggregated and reported at 30 minute intervals, and so, ideally, each solar PV system would have 48 timestamped reports for each day. Due to the coarse-grained nature of these measurements, any missing data points can greatly affect the shapes of the fitted models, leading to possible false flags. Thus, in order to parameterize the power generation curves as accurately as possible, we need to minimize the number of missing data points.
+Each entry in the 30 minute dataset consists of the system ID, the timestamp, and the measured energy output. In order to analyze the power output throughout an entire day, the timestamps must first be collected into groups by both system ID and date. As the measurements are taken every 30 minutes, there should be, ideally, 48 timestamps per system ID for every date. Due to the coarse-grained nature of these measurements, any missing data points can greatly affect the shapes of the fitted models, leading to possible false flags. Thus, in order to parameterize the power generation curves as accurately as possible, we need to minimize the number of missing data points.
 
 There are two main categories of missing data points:
 1. For a given solar PV system at a given timestamp (ex: 04/24/2019 12:30:00), the energy output was reported as NULL
 2. For a given solar PV system on a given day, fewer than 48 timestamps exist in the dataset
 
 All NULL values were removed from the dataset, and out of all pairings of ID-Date, only 144,730 had fewer than 48 timestamps - these were all also removed.
+
+## Analyzing the Principal Components
+As PC1 explains over 90% of the total variance, its value has the greatest impact on the overall shape of the curve. When PC1 is extremely high or extremely low, the resulting power generation curve has an anomalous spike which dominates the curve. After filtering out the major outliers and zooming into the normal range, an increase in PC1 is associated with a decrease in the maximum power value up until PC1 = 0. Afterward, the maximum power value appears to spike once again.
+
+On the other hand, PC2 does not have a clear correlation with any particular property of the power generation curves. However, comparing the individual sampled curves *does* seem to imply that when PC2 is extremely high or extremely low, the resulting power generation curve is wider. Considering that these curves represent the power generated from solar PV systems, the most likely curve shape would be somewhere between a bell-curve and a square-curve, depending on environmental factors and the system configurations. However, some curves with high or low PC2 values show power being generated at night, which is highly unlikely.
+
+## Analyzing the Anomalies Identified During the PCA Process
+
+### Major Outliers
+Though there are 3 clearly separated groups of anomalies, there actually is no significant difference between the curves from each group. In fact, 8/10 are from the same ss_id, 7635, and all have measurements taken within a fairly small timeframe (2017-11-20 to 2017-12-07). The most significant connection between all of these outlier points is that they contain extreme spikes in the maximum and/or minimum power generation values. The timings of the spike have no clear correlation, though interestingly, two of the curves have dual spikes at different times in the day.
+
+<p align="center">
+  <img src="images/plotting_major_anomalies.png" alt="Plotting Major Anomalies" width="700"/>
+</p>
+
+### Closer Outliers
+After filtering out the major anomalies, the next set of anomalies can be easily separated from the central cluster. Unlike the previous set of outliers though, a few patterns become clear when analyzing these curves:
+
+* When PC1 is relatively high, the amplitude of the curve becomes extremely large. This likely also occurs when PC1 is relatively low.
+* When PC2 is relatively high, the peak of the curve is offset from the center. In fact, many of these curves appear to show peak power generation at midnight. This likely also occurs when PC2 is relatively low
+
+These properties correlate with the choice of basis vectors. As stated previously, the basis vectors consist of a single bias curve to offset the reconstructed power curves vertically as well as a series of sinusoidal curves to recreate the shape of the original curves. PC1 appears to correlate with the coefficient for the bias vector while PC2 (and likely the next PCs) appars to correlate with the coefficients for the sinusoidal basis vectors.
+
+<p align="center">
+  <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="700"/>
+</p>
+
 
 # Conclusion
 
@@ -295,96 +397,8 @@ Take everything below and separate into the above categories
 
 
 
-This PCA process was performed on the original power generation values as well as the reconstructed values. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance. 
-
-<p align="center">
-  <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="400"/>
-</p>
-
-The reconstructions model the curves well as the mean curve aligns almost perfectly with the mean reconstruction. The standard deviations for each timestamp for the reconstructions are also generally much lower and smoother than the standard deviations of the original power values.
-
-<p align="center">
-  <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="400"/>
-</p>
-
-## Exploring the Relationships Between the Top 2 Principal Components
-As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape. Then, the maximum and minimum reconstructed power values are plotted for all points within this range.
-
-<p align="center">
-  <img src="images/main_cluster_with_mean.png" alt="Plotting the Main Cluster" width="500"/>
-</p>
-
-### Analyzing Mean PC1 With Increasing PC2
-For the following figures, the points are sampled such that PC1 is within 0.1 of its mean (-1.21)
-
-<p align="center">
-  <img src="images/mean_pc1_curves.png" alt="Visualization of Mean PC1 With Increasing PC2" width="700"/>
-</p>
-
-PC2 appears to correlate with a translation of the bulk of the curve from left to right as it increases.
-
-<p align="center">
-  <img src="images/mean_pc1_power.png" alt="Max and Min Power Generation With Mean PC1" width="500"/>
-</p>
-
-No major patterns with power generation are observed as PC2 increases, though at the edges of the distribution, there appear to be large spikes in maximum power measurements
-
-### Analyzing Mean PC2 With Increasing PC1
-For the following figures, the points are sampled such that PC2 is within 0.001 of its mean (-0.064)
-
-<p align="center">
-  <img src="images/mean_pc2_curves.png" alt="Visualization of Mean PCw With Increasing PC1" width="700"/>
-</p>
-
-PC1 appears to correlate with the height of the spike in power, though similarly to PC2, the height seems to increase at either end of the spectrum.
-
-<p align="center">
-  <img src="images/mean_pc2_power.png" alt="Max and Min Power Generation With Mean PC2" width="500"/>
-</p>
-
-As PC1 increases, the average maximum power generated decreases across this range. However, the standard deviation is fairly large across the whole range.
-
-### Identifying Major Outliers via PCA
-When plotting the data along the top two principal components, four major groupings are present:
-1. A central grouping of points
-2. Points where PC1 > 100
-3. Points where PC1 < 100 and PC2 > 100
-4. Points where PC1 < 100 and PC2 < -100
-
-The anomaly curves for each example in these groupings are plotted to analyze their shapes.
-
-<p align="center">
-  <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
-</p>
-
-
-<p align="center">
-  <img src="images/plotting_major_anomalies.png" alt="Plotting Major Anomalies" width="700"/>
-</p>
-
-There appear to be no significant differences between these anomaly groups - in fact, 8/10 are from the same ss_id, 7635, within a fairly small timeframe (2017-11-20 to 2017-12-07). The major connection between all of these outlier points is that they contain extreme maximum and/or minimum power generation values. 
-
-### Identifying Closer Outliers via PCA
-After filtering out the major outliers, a few more outliers can be identified located much more closely to the center of the distribution - these are data points where PC1 and/or PC2 are larger than 1. The curves of these minor outliers are similarly plotted below.
-
-<p align="center">
-  <img src="images/5_26_closeOutliers.png" alt="Plotting Minor Anomalies" width="500"/>
-</p>
-<p align="center">
-  <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="700"/>
-</p>
-
-Unlike the previous set of outliers, a few patterns become clear here:
-* When PC1 is relatively high, the amplitude of the curve becomes extremely large
-* When PC2 is relatively high, the peak of the curve is offset from the center. In fact, many of these curves appear to show peak power generation at midnight.
-
 ### Further Anomaly Detection
 
-While there are a few obvious anomalous groupings of points that are located far from the main cluster, there are possibly many, many more located much closer. The below plot shows only data points where both PC1 and PC2 are below 1. At this level of granularity, the use of PC boundaries becomes more nuanced and arbitrary, so we will utilize other methods to further identify any anomalies.
-
-<p align="center">
-  <img src="images/5_26_closeOutliers_1.png" alt="Plotting Minor Anomalies" width="500"/>
-</p>
 
 ## PCA for Anomaly Detection: Conclusion
 
@@ -407,17 +421,6 @@ Overall, PCA has shown to be a valuable tool in detecting anomalies within the d
 
 -------------------------------------------
 
-## Combining PCA with Other Anomaly Detection Methods
-
-### Statistical Methods
-
-#### Z-Score
-
-#### Interquartile Range (IQR)
-
-### Isolation Forest
-
-## Identifying Anomaly-Prone Solar PV System Configurations
 
 vvv Below is old data, but keeping them in here for template purposes
 
