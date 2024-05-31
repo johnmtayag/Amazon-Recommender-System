@@ -70,13 +70,15 @@ There are 36 null values in the metadata dataset, specifically in the operationa
 </center>
 
 ### Exploring the variables: Kwp (Solar PV System Power Rating)
-Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers, mainly those with kwp well above 50 kW. 
+Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers with kwp values approaching 200. 
 
 <center>
 <img src="images/kwp_distribution.png" alt="Distribution of kwp" width="650"/>
-
+<p float="left">
 <img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="400"/>
 <img src="images/hist_kwp.png" alt="Hist of kwp" width="400"/>
+</p>
+
 </center>
 
 ### Exploring the variables: Panel Tilt
@@ -94,7 +96,7 @@ Most systems are oriented such that the panels are oriented about 180 degrees fr
 </center>
 
 ### Exploring the variables: Mapping via iPyLeaflet
-These systems are plotted on a map using iPyLeaflet to identify any patterns between system location and configuration parameters. The PV systems in the dataset are mainly located  in England and Scotland and are particularly concentrated in populated regions. However, there are no obvious patterns between where a system is located and the other configuration parameters:
+These systems are plotted on a map using iPyLeaflet to identify any patterns between system location and configuration parameters. The PV systems in the dataset are mainly located in England and Scotland and are particularly concentrated in populated regions. However, there are no obvious patterns between where a system is located and the other configuration parameters:
 
 <center>
 <img src="images/map_system_locations.png" alt="System Locations Map" width="300"/>
@@ -154,7 +156,7 @@ First, all systems outside of the interquartile range of the kwp variable (IQR: 
 ```
 
 ## Reconstructing the Daily Power Generation Curves with the Fourier Transform
-The Fourier Transform is used to analyze and parameterize daily power generation curves. This method decomposes power generation data into simpler sinusoidal components, reducing the noise of the measurements and facilitating the identification of patterns and anomalies.
+The Fourier Transform is used to analyze and parameterize the daily power generation curves. This method decomposes the power generation data into simpler sinusoidal components, reducing the noise of the measurements and facilitating the identification of patterns and anomalies.
 
 ### Defining Constants and Basis
 The process begins by defining the necessary constants and creating an orthonormal basis of sinusoids. This involves:
@@ -195,23 +197,21 @@ To aid in the identification of anomalous curves, PCA is used to reduce the dime
 4. **Projecting the Reconstructions**
    * The reconstructed power values are projected onto the top 2 principal components
 
-After projecting the data, a series of cutoff values along the top two principal components are used to identify anomalies at different scales until the PCA method becomes less effective. The anomalies detected here are separated out of the original dataset and are marked as labeled anomalies for later supervised anomaly detection methods.
+After projecting the data, a series of cutoff values along the top two principal components are used to identify anomalies at different scales until the PCA method becomes less effective. 
+
+### The anomalies detected here are separated out of the original dataset and are marked as labeled anomalies for later supervised anomaly detection methods. (Change this potentially)
 
 ### Exploring the Relationships Between the Top 2 Principal Components
 As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were first filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape as the value of one of the principal components increases. Then, the maximum and minimum reconstructed power values are plotted for all points within this range to understand any relationships between the principal components and the power generation curves.
 
-<p align="center">
-  <img src="images/main_cluster_with_mean.png" alt="Plotting the Main Cluster" width="500"/>
-</p>
-
-The below plot shows the distribution of points after all major outliers identified during the PCA process. At this level of granularity, the use of PC boundaries becomes more nuanced and arbitrary, so we utilize other methods to further identify any anomalies.
+The below plot shows the distribution of points after all major outliers identified during the PCA process were filtered out. At this level of granularity, the use of PC boundaries becomes more nuanced and arbitrary, so we utilize other methods to further identify any anomalies.
 
 <p align="center">
   <img src="images/5_26_closeOutliers_1.png" alt="Plotting Minor Anomalies" width="500"/>
 </p>
 
 ## Further Anomaly Detection Using Statistical Methods
-After the initial PCA anomaly filtering, two different statistical approaches are used to identify anomalous ranges:
+After the initial PCA anomaly filtering, two different statistical approaches are applied to identify possible outlier ranges:
 
 1. **Interquartile Range Method**
    * The first and third quartile values along both PC1 and PC2 are identified, and any points that lie outside of the following cutoff values along either PC1 and/or PC2 are marked as anomalies:
@@ -234,7 +234,7 @@ An isolation forest is an unsupervised machine learning algorithm which utilizes
  
 However, Pyspark does not have any built-in isolation forest algorithms - instead, we use a customized ensemble of single-node binary trees that split the space with a randomized boundary line, and we record the average score for each point across all iterations.
 
-**Process:**
+**Custom Isolation Forest Process:**
 * First get the minimum and maximum values of the two variables (here, PC1 and PC2)
 * For each forest:
     * For each tree:
@@ -242,17 +242,17 @@ However, Pyspark does not have any built-in isolation forest algorithms - instea
         * Split the points into two groups according to which side of the line they are on
         * Give each point a score which corresponds to the fraction of all points that lie on the same side of the line
         * To minimize data storage requirements, track the scores in a running total, then divide by the number of splits for the average scores for each tree.
-* These results are averaged across trees, and across forests.
+* The resulting score for each point is averaged across trees, and across forests.
 
-To help visualize this process, the following figure shows 4 randomly generated boundary lines along with the resulting scores assigned to each group.
+To help visualize this process, the following figure shows 4 randomly generated boundary lines along with the resulting scores assigned to each group. Note how for each boundary line, the group where the mean PC value is included is given a very high score while the group on the other side is given a score close to zero. In the case that the boundary line splits the data in half, both sides get a score of about 0.5.
 
 <p align="center">
   <img src="images/iforest_example_boundary_lines.png" alt="Example Isolation Forest Boundary Lines" width="800"/>
 </p>
 
-This method relies on both randomness and the aggregated results of weak learner predictions, so there can be a lot of variability in results. Thus, averaging the results across multiple trees and even multiple forests is ideal. To maximize the likelihood
+This method relies on both randomness and the aggregated results of weak learner predictions, so there can be a lot of variability in results. Thus, averaging the results across multiple trees and even multiple forests is ideal. To maximize the likelihood that an outliers identified with this method are truly anomalous, we will test different combinations of number of trees and number of splits per forest, and we will use the results of the combination with this lowest variance in results.
 
-With these scores, we plot the data once again along the principal component axes, but now we can color each point according to its outlier score. We also plot the change in the average reconstructed power curve as the outlier score decreases.
+With the chosen set of scores, we plot the data once again along the principal component axes, but this time with each point colored according to its outlier score. We also plot the change in the average reconstructed power curve as the outlier score decreases.
 
 ## Testing Supervised Anomaly Detection Methods Using Labeled Data
 
@@ -281,7 +281,7 @@ To understand how reconstructing the power generation curves via the Fourier Tra
   <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="400"/>
 </p>
 
-The resulting reconstructions model the overall average curve quite well, but they also greatly reduce the standard deviation of power values measured at each timestamp.
+The resulting reconstructions model the overall average curve quite well, and they smooth out the spikes and dips in the standard deviations at different timestamps throughout the day.
 
 <p align="center">
   <img src="images/lim_3kwp_mean_curves.png" alt="EMean Curves" width="600"/>
@@ -515,7 +515,6 @@ The "generation_wh" column of the 30 minute dataset gives the amount of Watts ge
 This formula transforms each value in "generation_wh" from the amount of Watts generated in the last 30 minutes to the average power generated over the same 30 minute interval. This new value is saved as "power_kW."
 
 ### Preprocessing: Collecting Timestamp Groupings and Removing Missing Data Points
-
 Each entry in the 30 minute dataset consists of the system ID, the timestamp, and the measured energy output. In order to analyze the power output throughout an entire day, the timestamps must first be collected into groups by both system ID and date. As the measurements are taken every 30 minutes, there should be, ideally, 48 timestamps per system ID for every date. Due to the coarse-grained nature of these measurements, any missing data points can greatly affect the shapes of the fitted models, leading to possible false flags. Thus, in order to parameterize the power generation curves as accurately as possible, we need to minimize the number of missing data points.
 
 There are two main categories of missing data points:
@@ -524,7 +523,7 @@ There are two main categories of missing data points:
 
 All NULL values were removed from the dataset, and out of all pairings of ID-Date, only 144,730 had fewer than 48 timestamps - these were all also removed.
 
-## Analyzing the Principal Components
+## Analyzing the Principal Components of the Reconstructed Power Curves
 As PC1 explains over 90% of the total variance, its value has the greatest impact on the overall shape of the curve. When PC1 is extremely high or extremely low, the resulting power generation curve has an anomalous spike which dominates the curve. After filtering out the major outliers and zooming into the normal range, an increase in PC1 is associated with a decrease in the maximum power value up until PC1 = 0. Afterward, the maximum power value appears to spike once again.
 
 On the other hand, PC2 does not have a clear correlation with any particular property of the power generation curves. However, comparing the individual sampled curves *does* seem to imply that when PC2 is extremely high or extremely low, the resulting power generation curve is wider. Considering that these curves represent the power generated from solar PV systems, the most likely curve shape would be somewhere between a bell-curve and a square-curve, depending on environmental factors and the system configurations. However, some curves with high or low PC2 values show power being generated at night, which is highly unlikely.
@@ -550,36 +549,39 @@ These properties correlate with the choice of basis vectors. As stated previousl
   <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="700"/>
 </p>
 
-## Analyzing the Effectiveness of the Statistical Methods
+## Analyzing the Effectiveness of Statistical Methods for Outlier Detection
 Both the interquartile method and the z-score method resulted in very similar cutoff values and very similar average curve shapes for each grouping of outliers. Both methods resulted in no high PC1 outliers, and both methods had high PC2 outliers that closely resembled the normal curve. Also, both methods show the low PC2 outliers as having skinnier distributions compared to the low PC1 outlier group.
 
-Neither method worked particularly well, and this is likely attributed to the distribution not being normal. As can be seen in the below figure, the distribution is highly left skewed, particularly along the PC1 axis. Both methods also set a single boundary line in either direction which limits any further analysis as only a single curve can be generated for each anomaly grouping.
+While they were very similar, though, the interquartile method extracted a significantly lower number of low outliers, especially on the PC1 axis, and a slightly higher number of high outliers on the PC2 axis. Neither method worked particularly well at identifying truly anomalous curves, and this is likely attributed to the distribution not being normal. The distribution is highly left skewed, particularly along the PC1 axis. Both methods also set a single boundary line in either direction which limits any further analysis as only a single average curve can be generated to analyze each anomaly grouping.
 
-## Analyzing the Effectiveness of the Isolation Forest
+## Analyzing the Effectiveness of the Isolation Forest for Outlier Detection
 The isolation forest was quite effective in separating out outliers from the central cluster in all directions. Most of the points with the lowest scores are located far to the left of the distribution, and the score increases when approaching the mean. These scores also help to further organize the anomalies into subcategories correlating with distance from the mean.
 
-Plotting the average reconstruction curve as the score decreases is quite interesting - as the outlier score decreases, the height of the curve's peak increases and slowly splits into one tall curve and one slightly smaller peak to the right. Also, the variance seems to increase as the overall curve's shape becomes more jagged. 
+Plotting the average reconstruction curve as the score decreases is quite interesting - as the outlier score decreases, the height of the curve's peak increases and slowly splits into one tall curve and one slightly smaller peak to the right. Also, the variance seems to increase as the overall curve's shape becomes more jagged. The change in the mean curve reveals that the further away a point's PC1 and PC2 values are from the mean, the more irregular the power generation curve becomes.
 
-Without extra information, it is hard to explain why the average curve seems to split in two so cleanly. One possible explanation could be the prevalence of cloudy/rainy weather in the UK causing anomalous dips in power generation.
+Without extra information, it is hard to explain why the average curve seems to split in two so cleanly. One possible explanation could be the prevalence of cloudy/rainy weather in the UK causing anomalous dips and/or spikes in power generation.
 
-<p align="center">
-  <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Distributions of scores" width="500"/>
+<center>
+<p float="left">
+  <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Distributions of scores" width="455"/>
+  <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="480"/>
 </p>
-
-<p align="center">
-  <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="500"/>
-</p>
+</center>
 
 ## Analyzing the Effectivness of Supervised Outlier Detection Methods
 
 ## Analyzing the Distributions of System Configurations Within Anomaly Groupings
 Overall, the only variable that appears to correlate strongly with the occurence of anomalies is kwp. This makes sense as many of the average "anomalous" curves were simply normal curves with higher peaks. The average outlier curves identified with both statistical methods had fairly normal shapes that had peaks at 3 kW or lower. Similarly, the average curves identified using the isolation forest followed a similar pattern until the score dropped to 0.65 or below. However, given that the kwp cutoff for solar PV systems to be included in this analysis was 3.42, these "anomalies" may actual be legitimate curves.
 
-This result seems to suggest that, in order to ensure that all identified curves are truly anomalous, the dataset may need to be further restricted to smaller systems.
+This result seems to suggest that, in order to ensure that all identified curves are truly anomalous, the dataset may need to be even further restricted to a smaller smaller subset of solar PV systems.
+
+<p align="center">
+  <img src="images/outliers_kwp.png" alt="Distribution by Anomaly Grouping: kwp" width="650"/>
+</p>
 
 # Conclusion
 
-## PCA for Anomaly Detection: Conclusion
+## Discuss more of the above methods here, incorporate more than just PCA
 
 ### Effectiveness of PCA in Highlighting Anomalies
 In this analysis, PCA proved to be an effective method for identifying anomalies in the dataset. By transforming the high-dimensional data into two principal components, we were able to visualize and distinguish most normal data points from anomalous ones. The scatter plots of the first two principal components (PC1 and PC2) clearly showed clusters of normal points and isolated anomalies. By setting cutoff values in the principal component space, these anomalous points can be easily filtered out of the dataset.
