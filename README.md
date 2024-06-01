@@ -109,7 +109,7 @@ These systems are plotted on a map using iPyLeaflet to identify any patterns bet
 The majority of solar PV systems throughout the country have very low power output ratings. There are few with higher power output ratings, and these are located close to major population centers.
 
 <p align="center">
-<img src="images/map_by_kwp.png" alt="Map by kWp" width="400"/>
+<img src="images/map_by_kwp.png" alt="Map by kWp" width="600"/>
 </p>
 
 **Coloring Systems by Panel Orientation**:
@@ -117,7 +117,7 @@ The majority of solar PV systems throughout the country have very low power outp
 Most panels throughout the country are oriented at 180 degrees as identified earlier without any particular geographic trends.
 
 <p align="center">
-<img src="images/map_by_orientation.png" alt="Map by Orientation" width="400"/>
+<img src="images/map_by_orientation.png" alt="Map by Orientation" width="600"/>
 </p>
 
 **Coloring Systems by Panel Tilt**:
@@ -125,7 +125,7 @@ Most panels throughout the country are oriented at 180 degrees as identified ear
 Most panels throughout the country are tilted at about 30 degrees as identified earlier without any particular geographic trends.
 
 <p align="center">
-<img src="images/map_by_tilt.png" alt="Map by Tilt" width="400"/>
+<img src="images/map_by_tilt.png" alt="Map by Tilt" width="600"/>
 </p>
 
 
@@ -280,7 +280,7 @@ To understand how reconstructing the power generation curves via the Fourier Tra
 
 <center>
 
-<p float="left">
+<p float="left" align="center">
 <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="420"/>
 <img src="images/comparing_variance_explained_values.png" alt="Hist of kwp" width="300"/>
 </p>
@@ -301,11 +301,11 @@ For the following figures, all points where PC1 is within 0.1 of its mean (-1.21
 When PC2 is relatively low or relatively high, the resulting curves are highly irregular and deviate from a single central peak. However, no particular trends are present when analyzing the maximum and minimum power generation values within this range.
 
 <p align="center">
-  <img src="images/mean_pc1_curves.png" alt="Visualization of Mean PC1 With Increasing PC2" width="700"/>
+  <img src="images/mean_pc1_curves.png" alt="Visualization of Mean PC1 With Increasing PC2" width="800"/>
 </p>
 
 <p align="center">
-  <img src="images/mean_pc1_power.png" alt="Max and Min Power Generation With Mean PC1" width="500"/>
+  <img src="images/mean_pc1_power.png" alt="Max and Min Power Generation With Mean PC1" width="650"/>
 </p>
 
 ### Analyzing Mean PC2 With Increasing PC1
@@ -314,11 +314,11 @@ For the following figures, all points where PC2 is within 0.001 of its mean (-0.
 When PC1 is relatively low or relatively high, the resulting curve has a higher peak value. Within this range, the maximum power value decreases overall as PC1 grows, though there is significant variance between the values.
 
 <p align="center">
-  <img src="images/mean_pc2_curves.png" alt="Visualization of Mean PC2 With Increasing PC1" width="700"/>
+  <img src="images/mean_pc2_curves.png" alt="Visualization of Mean PC2 With Increasing PC1" width="800"/>
 </p>
 
 <p align="center">
-  <img src="images/mean_pc2_power.png" alt="Max and Min Power Generation With Mean PC2" width="500"/>
+  <img src="images/mean_pc2_power.png" alt="Max and Min Power Generation With Mean PC2" width="650"/>
 </p>
 
 ### Identifying Major Outliers via PCA
@@ -592,7 +592,7 @@ Plotting the average reconstruction curve as the score decreases is quite intere
 Without extra information, it is hard to explain why the average curve seems to split in two so cleanly. One possible explanation could be the prevalence of cloudy/rainy weather in the UK causing anomalous dips and/or spikes in power generation.
 
 <center>
-<p float="left">
+<p float="left" align="center">
   <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Distributions of scores" width="380"/>
   <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="400"/>
 </p>
