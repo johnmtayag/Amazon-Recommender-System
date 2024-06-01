@@ -19,7 +19,7 @@ The 30 minute dataset has 2,644,013,376 rows representing timestamped energy out
 2. **datetime**: The corresponding timestamp of when the measurement was made (timestamp_ntz)
 3. **ss_id**: The solar PV system ID number (long)
 
-<center>
+<p align="center">
 
 |generation_wh|           datetime|ss_id|
 |-------------|-------------------|-----|
@@ -27,7 +27,7 @@ The 30 minute dataset has 2,644,013,376 rows representing timestamped energy out
 |          0.0|2010-11-18 00:30:00| 2405|
 |          0.0|2010-11-18 01:00:00| 2405|
 
-</center>
+</p>
 
 The metadata dataset has 24,662 rows containing supplementary information on how each solar PV system was configured. Notably, there are more PV systems identified in the metadata dataset than the number actually represented in the 30 minute dataset. There are eight columns:
 1. **ss_id**: The solar PV system ID number (integer)
@@ -39,7 +39,7 @@ The metadata dataset has 24,662 rows containing supplementary information on how
 7. **kwp**: The energy generation capacity of the solar PV system in kw (double)
 8. **operational_at**: The date when the solar PV system was activated (date)
 
-<center>
+<p align="center">
 
 |ss_id|latitude_rounded|longitude_rounded|  llsoacd|orientation|tilt| kwp|operational_at|
 |-----|----------------|-----------------|---------|-----------|----|----|--------------|
@@ -47,7 +47,7 @@ The metadata dataset has 24,662 rows containing supplementary information on how
 | 2406|           54.88|            -1.38|E01008780|      315.0|30.0|1.89|    2010-12-03|
 | 2407|           54.88|            -1.38|E01008780|      225.0|30.0|1.89|    2010-12-03|
 
-</center>
+</p>
 
 ### Setting Up the Environment
 We utilize the following non-standard Python libraries in our analysis - these need to be set up via pip install or conda install methods.
@@ -60,96 +60,93 @@ We utilize the following non-standard Python libraries in our analysis - these n
 ### Null Values
 There are 36 null values in the metadata dataset, specifically in the operational_at column:
 
-<center>
+<p align="center">
 
 |ss_id|latitude_rounded|longitude_rounded|  llsoacd|orientation|tilt| kwp|operational_at|
 |-----|----------------|-----------------|---------|-----------|----|----|--------------|
 |    0|               0|                0|        0|          0|   0|   0|            36|
 
 
-</center>
+</p>
 
 ### Exploring the variables: Kwp (Solar PV System Power Rating)
 Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers with kwp values approaching 200. 
 
-<center>
+<p align="center">
 <img src="images/kwp_distribution.png" alt="Distribution of kwp" width="650"/>
-</center>
-
-<center>
-
-<p float="left">
-<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="400"/>
-<img src="images/hist_kwp.png" alt="Hist of kwp" width="400"/>
 </p>
 
-</center>
+<p float="left" align="center">
+<img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="400"/>
+<img src="images/hist_kwp.png" alt="Hist of kwp" width="405"/>
+</p>
+
 
 ### Exploring the variables: Panel Tilt
 Most systems are oriented such that the panels are tilted at about 30 degrees or 35 degrees. The distribution then tapers off fairly uniformly at 10 degrees and 50 degrees. Interestingly, there is a tendency toward angles divisible by 5 degrees noted by prominent spikes in the distribution.
 
-<center>
+<p align="center">
 <img src="images/tilt_distribution.png" alt="Tilt Distribution" width="500"/>
-</center>
+</p>
 
 ### Exploring the variables: Panel Orientation
 Most systems are oriented such that the panels are oriented about 180 degrees from North. Considering that these systems are located in the UK which is, itself, located at a fairly high latitude, this direction may be maximizing the power generated in this region. However, there is also a notable cluster of systems oriented in the 0-50 degree range which bucks this trend.
 
-<center>
+<p align="center">
 <img src="images/orientation_distribution.png" alt="Orientation Distribution" width="500"/>
-</center>
+</p>
 
 ### Exploring the variables: Mapping via iPyLeaflet
 These systems are plotted on a map using iPyLeaflet to identify any patterns between system location and configuration parameters. The PV systems in the dataset are mainly located in England and Scotland and are particularly concentrated in populated regions. However, there are no obvious patterns between where a system is located and the other configuration parameters:
 
-<center>
+<p align="center">
 <img src="images/map_system_locations.png" alt="System Locations Map" width="300"/>
-</center>
+</p>
 
 
 **Coloring Systems by System Power Rating**:
 
 The majority of solar PV systems throughout the country have very low power output ratings. There are few with higher power output ratings, and these are located close to major population centers.
 
-<center>
+<p align="center">
 <img src="images/map_by_kwp.png" alt="Map by kWp" width="400"/>
-</center>
+</p>
 
 **Coloring Systems by Panel Orientation**:
 
 Most panels throughout the country are oriented at 180 degrees as identified earlier without any particular geographic trends.
 
-<center>
+<p align="center">
 <img src="images/map_by_orientation.png" alt="Map by Orientation" width="400"/>
-</center>
+</p>
 
 **Coloring Systems by Panel Tilt**:
 
 Most panels throughout the country are tilted at about 30 degrees as identified earlier without any particular geographic trends.
 
-<center>
+<p align="center">
 <img src="images/map_by_tilt.png" alt="Map by Tilt" width="400"/>
-</center>
+</p>
 
 
 ## Exploring the 30 Minute Dataset
 There are 1,824,316 null values in the 30 minute dataset:
 
-<center>
+<p align="center">
 
 |Number of Null Power Values|Number of Null Timestamps|Number of Nulls ss_ids|
 |---------------------------|-------------------------|----------------------|
 |                    1824316|                        0|                     0|
 
-</center>
+</p>
 
 **Number of Timestamped Entries per Year**
 
 Though the dataset spans the range 2010 to 2021, the number of timestamped entries from each year varies greatly. Most of the timestamps in the dataset fall within the range 2015-2021, with the range 2017-2020 being particularly highly represented. 2010 and 2011 are both represented quite poorly, especially relative to all other years in the dataset.
 
-<center>
+<p align="center">
   <img src="images/num_timestamps_yearly.png" alt="Number of Timestamped Entries per Year" width="500"/>
-</center>
+</p>
   
 ## Main Preprocessing
 First, all systems outside of the interquartile range of the kwp variable (IQR: 2.28 <= kwp <= 3.42) are filtered out of the dataset. The energy generation values, measured as kW*(30 minutes) are converted into average power generation values, measured as kW. The timestamped data is then grouped by ss_id and date to get a series of sequences of power generation values representing the power generated by a single system over a single day. The dataset is then filtered further such that only groupings with 48 non-null timestamped power generation measurements are retained.
@@ -497,11 +494,15 @@ Compared to the distribution for all points, each of the anomaly groups had high
 
 **Distributions of latitude**
 
+There is a spike in outlier counts around 56 degrees in the PCA outlier grouping - this is from the single ss_id with 8 major anomalous curves identified previously. The other distributions have fairly similar shapes to the distribution for all systems, though the isolation forest group has very few instances with higher latitude
+
 <p align="center">
   <img src="images/outliers_latitude.png" alt="Distribution by Anomaly Grouping: latitude" width="650"/>
 </p>
 
 **Distributions of longitude**
+
+Similar to the latitude plots, there is another spike in counts at about -5 degrees in the PCA outlier grouping from the single ss_id with 8 anomalous curves. The others, again, have similar shapes to the distribution for all systems, though the isolation forest group has a significant spike at about -1 degrees.
 
 <p align="center">
   <img src="images/outliers_longitude.png" alt="Distribution by Anomaly Grouping: longitude" width="650"/>
@@ -509,11 +510,15 @@ Compared to the distribution for all points, each of the anomaly groups had high
 
 **Distributions of panel orientation**
 
+The isolation forest group has very few instances where the panel orientation is greater than 200 degrees, especially compared to how many systems of these systems exist.
+
 <p align="center">
   <img src="images/outliers_orientation.png" alt="Distribution by Anomaly Grouping: orientation" width="650"/>
 </p>
 
 **Distributions of panel tilt**
+
+The isolation forest group again has another difference in the shape from the distribution of all systems - there are significant spikes in outlier counts where the panel tilt is at about 15 degrees and 20 degrees.
 
 <p align="center">
   <img src="images/outliers_tilt.png" alt="Distribution by Anomaly Grouping: tilt" width="650"/>
@@ -602,6 +607,12 @@ This result seems to suggest that, in order to ensure that all identified curves
 
 <p align="center">
   <img src="images/outliers_kwp.png" alt="Distribution by Anomaly Grouping: kwp" width="650"/>
+</p>
+
+Though the outlier frequencies for the IQR and STD methods had fairly similar distributions to the number of systems represented in the dataset, the isolation forest group did have a few notable differences in the orientation and tilt variables. Significantly fewer systems with an orientation above 200 degrees had outlier scores below 0.6. There were also a couple of spikes in outlier frequency where the panel tilt was at about 15 degrees and 20 degrees. The data suggests that there may be some kind of correlation between the frequency of anomalous power generation curves and panel tilt/orientation, but further analysis is required to confirm this suspicion.
+
+<p align="center">
+  <img src="images/outliers_orientation_tilt.png" alt="Distribution by Anomaly Grouping: iforest only" width="650"/>
 </p>
 
 # Conclusion
