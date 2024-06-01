@@ -14,10 +14,14 @@ There are five datasets available in this repository, but only 2 will be used in
 * **30min.parquet**: Contains timestamped power generation values from over 20,000 PV systems in the UK from 2010 to 2021
 * **metadata.csv**: Provides supplemental information on the setup configurations of each PV system
 
+**30min.parquet**
+
 The 30 minute dataset has 2,644,013,376 rows representing timestamped energy output measurements from various solar PV systems located across the UK. There are three columns:
 1. **generation_wh**: The amount of energy outputted over 30 minutes in Wh (double)
 2. **datetime**: The corresponding timestamp of when the measurement was made (timestamp_ntz)
 3. **ss_id**: The solar PV system ID number (long)
+
+Each row in this dataset represents a single timestamped energy generation measurement from an individual solar PV system:
 
 <p align="center">
 
@@ -39,6 +43,8 @@ The metadata dataset has 24,662 rows containing supplementary information on how
 7. **kwp**: The energy generation capacity of the solar PV system in kw (double)
 8. **operational_at**: The date when the solar PV system was activated (date)
 
+Each row in this dataset contains the system configuration for an individual solar PV system:
+
 <p align="center">
 
 |ss_id|latitude_rounded|longitude_rounded|  llsoacd|orientation|tilt| kwp|operational_at|
@@ -49,9 +55,10 @@ The metadata dataset has 24,662 rows containing supplementary information on how
 
 </p>
 
-### Setting Up the Environment
+## Setting Up the Environment
 We utilize the following non-standard Python libraries in our analysis - these need to be set up via pip install or conda install methods.
 * ipyleaflet --> [[Setup documentation]](https://ipyleaflet.readthedocs.io/en/latest/installation/index.html)
+  * ipyleaflet is used to generate maps to visualize the locations of the solar PV systems in this dataset.
 
 # Methods
 
@@ -66,17 +73,16 @@ There are 36 null values in the metadata dataset, specifically in the operationa
 |-----|----------------|-----------------|---------|-----------|----|----|--------------|
 |    0|               0|                0|        0|          0|   0|   0|            36|
 
-
 </p>
 
 ### Exploring the variables: Kwp (Solar PV System Power Rating)
-Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers with kwp values approaching 200. 
+Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers with kwp values up to and exceeding 200 kW. 
 
 <p align="center">
 <img src="images/kwp_distribution.png" alt="Distribution of kwp" width="650"/>
 </p>
 
-<p float="left" align="center">
+<p align="center">
 <img src="images/hist_kwp_no_outliers.png" alt="Hist of kwp without outliers" width="400"/>
 <img src="images/hist_kwp.png" alt="Hist of kwp" width="405"/>
 </p>
@@ -86,21 +92,21 @@ Most of the PV systems represented in this dataset have fairly low power ratings
 Most systems are oriented such that the panels are tilted at about 30 degrees or 35 degrees. The distribution then tapers off fairly uniformly at 10 degrees and 50 degrees. Interestingly, there is a tendency toward angles divisible by 5 degrees noted by prominent spikes in the distribution.
 
 <p align="center">
-<img src="images/tilt_distribution.png" alt="Tilt Distribution" width="500"/>
+<img src="images/tilt_distribution.png" alt="Tilt Distribution" width="600"/>
 </p>
 
 ### Exploring the variables: Panel Orientation
 Most systems are oriented such that the panels are oriented about 180 degrees from North. Considering that these systems are located in the UK which is, itself, located at a fairly high latitude, this direction may be maximizing the power generated in this region. However, there is also a notable cluster of systems oriented in the 0-50 degree range which bucks this trend.
 
 <p align="center">
-<img src="images/orientation_distribution.png" alt="Orientation Distribution" width="500"/>
+<img src="images/orientation_distribution.png" alt="Orientation Distribution" width="600"/>
 </p>
 
 ### Exploring the variables: Mapping via iPyLeaflet
 These systems are plotted on a map using iPyLeaflet to identify any patterns between system location and configuration parameters. The PV systems in the dataset are mainly located in England and Scotland and are particularly concentrated in populated regions. However, there are no obvious patterns between where a system is located and the other configuration parameters:
 
 <p align="center">
-<img src="images/map_system_locations.png" alt="System Locations Map" width="300"/>
+<img src="images/map_system_locations.png" alt="System Locations Map" width="350"/>
 </p>
 
 
@@ -130,13 +136,15 @@ Most panels throughout the country are tilted at about 30 degrees as identified 
 
 
 ## Exploring the 30 Minute Dataset
-There are 1,824,316 null values in the 30 minute dataset:
+There are 1,824,316 null values in the 30 minute dataset, specifically in the energy generation variable. These are timestamps where, for whatever reason, there is no energy generation measurement recorded:
+
+**Number of Null Values**
 
 <p align="center">
 
-|Number of Null Power Values|Number of Null Timestamps|Number of Nulls ss_ids|
-|---------------------------|-------------------------|----------------------|
-|                    1824316|                        0|                     0|
+|generation_wh|datetime|ss_id|
+|-------------|--------|-----|
+|      1824316|       0|    0|
 
 </p>
 
@@ -147,9 +155,18 @@ Though the dataset spans the range 2010 to 2021, the number of timestamped entri
 <p align="center">
   <img src="images/num_timestamps_yearly.png" alt="Number of Timestamped Entries per Year" width="500"/>
 </p>
+
+### Visualizing the Power Curves
+In order to visualize the power being generated by a system throughout the course of a day, the timestamps for a given ss_id for a given date must be collected in sequential order. The following figure shows three curves with very different shapes, revealing how variable the power curves can be.
+
+<p align="center">
+<img src="images/comparing_curves_overlayed.png" alt="Comparing Power Curves" width="600"/>
+</p>
   
 ## Main Preprocessing
-First, all systems outside of the interquartile range of the kwp variable (IQR: 2.28 <= kwp <= 3.42) are filtered out of the dataset. The energy generation values, measured as kW*(30 minutes) are converted into average power generation values, measured as kW. The timestamped data is then grouped by ss_id and date to get a series of sequences of power generation values representing the power generated by a single system over a single day. The dataset is then filtered further such that only groupings with 48 non-null timestamped power generation measurements are retained.
+First, all systems outside of the interquartile range of the kwp variable (IQR: 2.28 <= kwp <= 3.42) are filtered out of the dataset. To better relate the energy generation values to the solar PV system power rating, the energy generation values, measured as kW*(30 minutes) are converted into average power generation values, measured as kW. 
+
+The timestamped data is then grouped by ss_id and date and collected into sequences of power generation values. Each sequence represents the power generated by a single system over a single day. The dataset is then filtered further such that only groupings with 48 non-null timestamped power generation measurements are retained.
 
 **The Formula Used to Convert the Energy Generation Values to Power Generation Values:**
 ```math
@@ -157,7 +174,7 @@ First, all systems outside of the interquartile range of the kwp variable (IQR: 
 ```
 
 ## Reconstructing the Daily Power Generation Curves with the Fourier Transform
-The Fourier Transform is used to analyze and parameterize the daily power generation curves. This method decomposes the power generation data into simpler sinusoidal components, reducing the noise of the measurements and facilitating the identification of patterns and anomalies.
+The Fourier Transform is used to analyze and parameterize the daily power generation curves. By decomposing the power generation data into simpler sinusoidal components, this method the noise of the measurements and facilitating the identification of patterns and anomalies.
 
 ### Defining Constants and Basis
 The process begins by defining the necessary constants and creating an orthonormal basis of sinusoids. This involves:
@@ -169,14 +186,14 @@ The basis vectors are constructed as follows:
 2. Append the desired number of vectors to an array to prepare for matrix operations.
 
 ### Visualizing Basis Sinusoids
-To understand how each sinusoid contributes to the overall model, we plot the first five basis sinusoids. This visualization helps in understanding how the individual components are used in the Fourier Transform. The first basis vector is a flat bias curve which helps capture the curve's height while the rest of the basis vectors are sinusoids of varying frequency to capture the complexity of the waveforms.
+To understand how each sinusoid contributes to the overall model, we plot the first five basis sinusoids. This visualization helps in understanding how the individual components come together to better approximate the original curves. The first basis vector is a flat bias curve which helps capture the curve's height while the rest of the basis vectors are sinusoids of varying frequency to capture the complexity of the waveforms.
 
 <p align="center">
   <img src="images/first_five_basis_sinusoids.png" alt="First 5 Basis Sinusoids" width="400"/>
 </p>
 
 ### Comparing Projected Reconstructions to Original Curves
-The power generation curves are approximated by projecting them onto the basis vectors. This comparison shows how increasing the number of basis vector projections makes the resulting reconstruction more accurate. For our analysis, all 21 basis vectors are used to reconstruct the curves as accurately as possible while still minimizing the overall noise in the measurements.
+The power generation curves are approximated by projecting them onto the basis vectors. The following figure shows how increasing the number of basis vector projections makes the resulting reconstruction more accurate. For our analysis, all 21 basis vectors are used to reconstruct the curves as accurately as possible while still minimizing the overall noise in the measurements.
 
 <p align="center">
   <img src="images/compare_power_curves_approx.png" alt="Comparison of Original and Approximated Curves" width="800"/>
@@ -202,7 +219,7 @@ After projecting the data, a series of cutoff values along the top two principal
 
 ### The anomalies detected here are separated out of the original dataset and are marked as labeled anomalies for later supervised anomaly detection methods. (Change this potentially)
 
-### Exploring the Relationships Between the Top 2 Principal Components
+## Exploring the Relationships Between the Top 2 Principal Components
 As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were first filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape as the value of one of the principal components increases. Then, the maximum and minimum reconstructed power values are plotted for all points within this range to understand any relationships between the principal components and the power generation curves.
 
 The below plot shows the distribution of points after all major outliers identified during the PCA process were filtered out. At this level of granularity, the use of PC boundaries becomes more nuanced and arbitrary, so we utilize other methods to further identify any anomalies.
