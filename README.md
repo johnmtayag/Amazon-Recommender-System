@@ -281,9 +281,14 @@ Similarly, only the following parameters are included in this analysis:
 ## Comparing the Effectiveness of PCA Performed on the Original Power Values Versus the Reconstructed Values
 To understand how reconstructing the power generation curves via the Fourier Transform impacts our analysis, we perform PCA on both and plot the amount of variance explained by both sets of eigenvectors. The first principal component of the reconstructed power values explains over 90% of the variance while the first two principal components of the original power values only explain about 70% of the variance.
 
-<p align="center">
-  <img src="images/comparing_variance_explained.png" alt="Explained Variance" width="400"/>
+<center>
+
+<p float="left">
+<img src="images/comparing_variance_explained.png" alt="Explained Variance" width="420"/>
+<img src="images/comparing_variance_explained_values.png" alt="Hist of kwp" width="300"/>
 </p>
+
+</center>
 
 The resulting reconstructions model the overall average curve quite well, and they smooth out the spikes and dips in the standard deviations at different timestamps throughout the day.
 
@@ -296,6 +301,8 @@ The resulting reconstructions model the overall average curve quite well, and th
 ### Analyzing Mean PC1 With Increasing PC2
 For the following figures, all points where PC1 is within 0.1 of its mean (-1.21) are extracted. Six points are then randomly sampled to visualize how the curves change as PC2 increases along the range. The next figure shows the maximum and minimum power generation values for each point within the range ordered by PC2 value.
 
+When PC2 is relatively low or relatively high, the resulting curves are highly irregular and deviate from a single central peak. However, no particular trends are present when analyzing the maximum and minimum power generation values within this range.
+
 <p align="center">
   <img src="images/mean_pc1_curves.png" alt="Visualization of Mean PC1 With Increasing PC2" width="700"/>
 </p>
@@ -306,6 +313,8 @@ For the following figures, all points where PC1 is within 0.1 of its mean (-1.21
 
 ### Analyzing Mean PC2 With Increasing PC1
 For the following figures, all points where PC2 is within 0.001 of its mean (-0.064) are extracted. Again, six points are then randomly sampled to visualize how the curves change as PC1 increases along the range. The next figure shows the maximum and minimum power generation values for each point within the range ordered by PC1 value.
+
+When PC1 is relatively low or relatively high, the resulting curve has a higher peak value. Within this range, the maximum power value decreases overall as PC1 grows, though there is significant variance between the values.
 
 <p align="center">
   <img src="images/mean_pc2_curves.png" alt="Visualization of Mean PC2 With Increasing PC1" width="700"/>
@@ -374,11 +383,17 @@ As previously stated, the interquartile range method identifies outliers along a
 
 **Visualizing the Outliers**
 
+No high outliers for PC1 were identified, so the figure only shows the low outliers.
+
 <p align="center">
   <img src="images/iqr_outliers_visualized.png" alt="Visualizing Minor Anomalies" width="600"/>
 </p>
 
 **Visualizing the Average Outlier Curves**
+
+The shape of the average curve for both low PC1 outliers and low PC2 outliers are very similar. However, the average curve for the low PC1 outliers has a taller peak at about 3 kW while the low PC2 outliers has a shorter peak at about 2.5 kW. The curve for the low PC2 outlier group is also slightly skinnier.
+
+Unlike the low outlier groups, the shape of the average curve for the high PC2 outliers has no significant difference from the shape of the average curve for the normal points.
 
 <p align="center">
   <img src="images/iqr_outliers_curves.png" alt="Visualizing Minor Anomalies" width="700"/>
@@ -409,11 +424,15 @@ As previously stated, the Z-score method identifies outliers along a single axis
 
 **Visualizing the Outliers**
 
+There is almost no difference between this visualization and the previous visualization obtained using the interquartile method.
+
 <p align="center">
   <img src="images/std_outliers_visualized.png" alt="Visualizing Minor Anomalies" width="600"/>
 </p>
 
 **Visualizing the Average Outlier Curves**
+
+Again, there is almost no difference between this visualization and the previous visualization obtained using the interquartile method.
 
 <p align="center">
   <img src="images/std_outliers_curves.png" alt="Visualizing Minor Anomalies" width="700"/>
@@ -441,17 +460,23 @@ Overall, the resulting scores were all quite similar, but the combination of 7 t
 
 **Distribution of Mean Scores and Individual Standard Deviations**
 
+Most points had very high scores with the first quartile being located at around 0.875. The lower whisker for outlier values was located at about 0.825, so all scores below that cutoff were classified as outliers for this analysis. The individual standard deviations were all also extremely small, with most being well under 0.0025. The largest standard deviations were around 0.03, so overall, the results for this run were extremely stable.
+
 <p align="center">
   <img src="images/7t10s_distribution.png" alt="Distributions of scores" width="800"/>
 </p>
 
 **Visualizing the Resulting Outlier Scores**
 
+The highest scores were located near the mean (demarcated with a red x). The further away from the mean, the lower the score, with the lowest scores being clustered mainly to the far left of the distribution. The figure on the right shows the same data except with the normal points greyed out to highlight the outliers.
+
 <p align="center">
   <img src="images/visualizing_score_distribution_combined.png" alt="Distributions of scores" width="800"/>
 </p>
 
 **Visualizing the Average Curve as the Outlier Score Changes**
+
+The average curve for the normal points has a bell-shape that peaked at about 0.8. As the outlier score decreases, the height of the curve's peak rises. At about 0.60, the curve starts to split, and the shape becomes more irregular. At the lowest outlier score values, the curve displays a prominent initial peak at about timestamp 20, followed by a dip, then a smaller peak at about timestamp 30. 
 
 <p align="center">
   <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="500"/>
@@ -464,7 +489,7 @@ The following plots show the shapes of the distribution in the metadata variable
 
 **Distributions of kwp**
 
-Compared to the distribution for all points, each of the anomaly groups had higher anomaly counts associated with systems in the higher kwp range.
+Compared to the distribution for all points, each of the anomaly groups had higher anomaly counts associated with systems in the higher kwp range. Though there appears to be spikes in the distribution for the PCA grouping, keep in mind that the scales on the y-axis are  significantly different between plots.
 
 <p align="center">
   <img src="images/outliers_kwp.png" alt="Distribution by Anomaly Grouping: kwp" width="650"/>
