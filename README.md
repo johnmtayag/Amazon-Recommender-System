@@ -215,10 +215,6 @@ To aid in the identification of anomalous curves, PCA is used to reduce the dime
 4. **Projecting the Reconstructions**
    * The reconstructed power values are projected onto the top 2 principal components
 
-After projecting the data, a series of cutoff values along the top two principal components are used to identify anomalies at different scales until the PCA method becomes less effective. 
-
-### The anomalies detected here are separated out of the original dataset and are marked as labeled anomalies for later supervised anomaly detection methods. (Change this potentially)
-
 ## Exploring the Relationships Between the Top 2 Principal Components
 As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were first filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape as the value of one of the principal components increases. Then, the maximum and minimum reconstructed power values are plotted for all points within this range to understand any relationships between the principal components and the power generation curves.
 
@@ -227,6 +223,10 @@ The below plot shows the distribution of points after all major outliers identif
 <p align="center">
   <img src="images/5_26_closeOutliers_1.png" alt="Plotting Minor Anomalies" width="500"/>
 </p>
+
+After projecting the data, a series of cutoff values along the top two principal components are used to identify anomalies at different scales until the PCA method becomes less effective.
+
+### The anomalies detected here are separated out of the original dataset and are marked as labeled anomalies for later supervised anomaly detection methods. (Change this potentially)
 
 ## Further Anomaly Detection Using Statistical Methods
 After the initial PCA anomaly filtering, two different statistical approaches are applied to identify possible outlier ranges:
@@ -364,6 +364,9 @@ After filtering out the major outliers, a total of 7 more outliers can be identi
 <p align="center">
   <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="700"/>
 </p>
+
+### Identifying Principal Component Boundaries for Possible Anomalies
+
 
 ## Further Anomaly Detection Using Statistical Methods
 To aid in the further identification of outliers, the previously identified points were filtered out to minimize the region of interest:
