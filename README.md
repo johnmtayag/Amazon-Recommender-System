@@ -218,26 +218,19 @@ To aid in the identification of anomalous curves, PCA is used to reduce the dime
 ## Exploring the Relationships Between the Top 2 Principal Components
 As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were first filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape as the value of one of the principal components increases. Then, the maximum and minimum reconstructed power values are plotted for all points within this range to understand any relationships between the principal components and the power generation curves.
 
-The below plot shows the distribution of points after all major outliers identified during the PCA process were filtered out. At this level of granularity, the use of PC boundaries becomes more nuanced and arbitrary, so we combine PCA with other methods to further identify any anomalies.
-
-<p align="center">
-  <img src="images/5_26_closeOutliers_1.png" alt="Plotting Minor Anomalies" width="500"/>
-</p>
-
 ## Anomaly Detection Using PCA
-
-After projecting the data, a series of cutoff values along the top two principal components are used to identify anomalies at different scales until the PCA method becomes less effective. In order to identify the cutoff values, the change in the average power curve will be analyzed to detect when the curves start to destabilize.
+After projecting the data, a series of cutoff values along the top two principal components are used to identify the ranges where the curves switch from normal to anomalous. In order to identify the cutoff values, the change in the average power curve will be analyzed to detect when the curves start to destabilize.
 
 ### The anomalies detected here are separated out of the original dataset and are marked as labeled anomalies for later supervised anomaly detection methods. (Change this potentially)
 
 ## Further Anomaly Detection Using Statistical Methods
-After the initial PCA anomaly filtering, two different statistical approaches are applied to identify possible outlier ranges:
+After the initial PCA anomaly filtering, two different statistical approaches are also applied to identify alternative outlier ranges:
 
 1. **Interquartile Range Method**
    * The first and third quartile values along both PC1 and PC2 are identified, and any points that lie outside of the following cutoff values along either PC1 and/or PC2 are marked as anomalies:
     1. Low Cutoff = Q1 - 1.5 x (Q3 - Q1)
     2. High Cutoff = Q3 + 1.5 x (Q3 - Q1)
-2. **Z-Score Method**
+2. **Z-Score/Standard Deviation Method**
    * Like the previous method, a series of cutoff values along both PC1 and PC2 are identified, and any points that lie outside of the boundaries along either PC1 and/or PC2 are marked as anomalies. This time, the cutoff values are defined using the mean and the sample standard deviation of the datatset:
     1. Low Cutoff = Mean - 3 x STD
     2. High Cutoff = Mean + 3 x STD
@@ -251,8 +244,17 @@ An isolation forest is an unsupervised machine learning algorithm which utilizes
     * Recursively split the space along random variables at random values until some stopping criterion (ex: until every leaf node contains 3 points at maximum)
     * Give each point a score which corresponds to how close its leaf node is to the root node
     * Average this score across multiple trees
+
+<p align="center">
+  <img src="images/iforest_example.png" alt="Example Isolation Forest Boundary Lines" width="800"/>
+</p>
+
+<center> 
+
+[Source](https://arpitbhayani.me/blogs/isolation-forest/) 
+</center>
  
-However, Pyspark does not have any built-in isolation forest algorithms - instead, we use a customized ensemble of single-node binary trees that split the space with a randomized boundary line, and we record the average score for each point across all iterations.
+However, Pyspark does not have any built-in isolation forest algorithms - instead, we use a customized ensemble of single-node binary trees that sequentially split the space with randomized boundary lines, and we record the average score for each point across all iterations.
 
 **Custom Isolation Forest Process:**
 * First get the minimum and maximum values of the two variables (here, PC1 and PC2)
@@ -265,7 +267,7 @@ However, Pyspark does not have any built-in isolation forest algorithms - instea
         * To minimize data storage requirements, track the scores in a running total, then divide by the number of splits for the average scores for each tree.
 * The resulting score for each point is averaged across trees, and across forests.
 
-To help visualize this process, the following figure shows 4 randomly generated boundary lines along with the resulting scores assigned to each group. Note how for each boundary line, the group where the mean PC value is included is given a very high score while the group on the other side is given a score close to zero. In the case that the boundary line splits the data in half, both sides get a score of about 0.5.
+To help visualize this process, the following figure shows 4 randomly generated boundary lines along with the resulting scores assigned to each group. Note how, for each boundary line, the group where the mean PC value is included is given a very high score while the group on the other side is given a score close to zero. This is due to a high concentration of points that surround the mean for this dataset. In the case that the boundary line splits the data in half, both sides get a score that approaches 0.5.
 
 <p align="center">
   <img src="images/iforest_example_boundary_lines.png" alt="Example Isolation Forest Boundary Lines" width="800"/>
@@ -678,10 +680,20 @@ Without extra information, it is hard to explain why the average curve seems to 
 </p>
 </center>
 
+### How does the Custom Isolation Forest Compare to the Typical Algorithm?
+Considering its simplicity, this algorithm worked fairly well in separating outliers from normal points. Moreover, it gives each point a score based on how often it was separated from the other points - this is an easy metric to calculate and track. Another benefit is how the algorithm generates decision boundaries. The typical isolation forest generates decision boundaries that only consider a single boundary - this creates decision boundaries that only split the space orthgonally relative to one of the axes. Instead of splitting on a single axis, this algorithm is capable of creating decision boundaries in any direction.
+
+However, there are a few drawbacks in the implementation. For one, there are several likely outliers to the lower right of the mean that were not captured by the algorithm. This is likely due to two main factors:
+
+* The algorithm gives each point an average score based on which sides of the randomly generated boundary lines it lies on. If there are not enough lines, then the model does not have a fine-enough granularity to capture outliers that may fall closer to the mean.
+* The mean is highly shifted from the center, so the algorithm is less likely to generate lines that split anomalies on the right side away from the mean.
+
+Another large drawback is that this method relies on there being a single main cluster that all other points deviate from. While this worked well with this dataset, the algorithm may not generalize well with datasets that have multiple clusters
+
 ## Analyzing the Effectivness of Supervised Outlier Detection Methods
 
 ## Analyzing the Distributions of System Configurations Within Anomaly Groupings
-Overall, the only variable that appears to correlate strongly with the occurence of anomalies is kwp. This makes sense as many of the average "anomalous" curves were simply normal curves with higher peaks. The average outlier curves identified with both statistical methods had fairly normal shapes that had peaks at 3 kW or lower. Similarly, the average curves identified using the isolation forest followed a similar pattern until the score dropped to 0.65 or below. However, given that the kwp cutoff for solar PV systems to be included in this analysis was 3.42, these "anomalies" may actual be legitimate curves.
+Overall, the only variable that appears to correlate strongly with the occurence of anomalies is kwp. This makes sense as many of the average "anomalous" curves were simply normal curves with higher peaks. The average outlier curves identified with both statistical methods had fairly normal shapes that had peaks at 3 kW or lower. Similarly, the average curves identified using the isolation forest followed a similar pattern until the score dropped to 0.65 or below. However, given that the kwp cutoff for solar PV systems to be included in this analysis was 3.42, many of these "anomalies" may actually be legitimate curves. 
 
 This result seems to suggest that, in order to ensure that all identified curves are truly anomalous, the dataset may need to be even further restricted to a smaller smaller subset of solar PV systems.
 
@@ -692,24 +704,42 @@ This result seems to suggest that, in order to ensure that all identified curves
 
 # Conclusion
 
-## Discuss more of the above methods here, incorporate more than just PCA
+## Fourier Transform for Power Curve Approximation
+
+### Effectiveness of the Fourier Transform in the Anomaly Detection Process
+In its original state, the power generation data is reported at 30 minute intervals throughout the course of a day - thus, there are only 48 timestamped measurements that paramterize the curves. As the reported data is averaged throughout each interval, there can be large spikes and dips simply due to unavoidable factors, such as unpredictable weather changes in a day. In order to reduce the noise in the datasets, we applied the Fourier Transform in order to reconstruct the curves using sinusoidal components. This resulted in significantly smoother curves that were easier to compare. Applying PCA to the reconstructions was incredibly effective as well, as the first principal component for the reconstructions explained over 90% of the variance compared to only 38% without the reconstruction. 
+
+However, the reconstructions were not perfect. As they reconstructed the data using sinusoidal components, most resulting curves displayed negative minimum power. Normally, the minimum power should be zero, so any curves that actually had negative minimum power measurements were likely missed. The reconstructions also assume that all of the fluctuations in the measurements are due to noise which should be filtered out - this might not be an entirely accurate assumption.
+
+Overall, the application of the Fourier Transform succeeded in simplifying the anomaly detection process, and it helped to highlight major anomalies in the dataset. However, it might not have been as effective in helping to identify more minor anomalies - in fact, it might have even masked them.
+
+## PCA for Anomaly Detection
 
 ### Effectiveness of PCA in Highlighting Anomalies
-In this analysis, PCA proved to be an effective method for identifying anomalies in the dataset. By transforming the high-dimensional data into two principal components, we were able to visualize and distinguish most normal data points from anomalous ones. The scatter plots of the first two principal components (PC1 and PC2) clearly showed clusters of normal points and isolated anomalies. By setting cutoff values in the principal component space, these anomalous points can be easily filtered out of the dataset.
+In this analysis, PCA proved to be an effective method for simplifying the anomaly identification process. By transforming the high-dimensional data into two principal components, we were able to visualize and distinguish most normal data points from anomalous ones. The scatter plots of the first two principal components (PC1 and PC2) clearly showed clusters of normal points and isolated anomalies. By setting cutoff values in the principal component space, these anomalous points can be easily filtered out of the dataset. The specific anomalies identified had particularly high or low PC1 and PC2 values, which correlated with spikes in the measured power and/or shifts in the timing of the peak(s). This indicates that PCA can successfully capture and highlight abnormal variations in the data, particularly those associated with sudden increases in power generation.
 
-The specific anomalies identified had particularly high or low PC1 and PC2 values, which correlated with spikes in the measured power and/or shifts in the timing of the peak(s). This indicates that PCA can successfully capture and highlight abnormal variations in the data, particularly those associated with sudden increases in power generation.
+Viewing the average power curves at different points in the principal component space also revealed how the shape of the curve changes with the principal components. However, this relationship was complex due to the wide variations in possible power curve shapes. In order to fully parametrize the curves, likely more than two principal components are required.
 
 ### Benefits of Using PCA for Anomaly Detection
 Most real-world datasets don't have labeled anomalies as it can be difficult to identify which points are actually anomalous. The lack of a labeled dataset heavily restricts the number of available anomaly detection methods which often consist of supervised learning approaches. Identifying anomalies via PCA not only helps in detecting outliers but also enables the creation of a labeled dataset. This labeled dataset can then be used to train and evaluate supervised learning models, enhancing our ability to predict and manage anomalies in future data.
 
 ### Drawbacks of Relying Only on PCA for Anomaly Detection
-After filtering out the major anomalies identified using PCA, there is a fairly tight cluster of points that remain. In order to further identify anomalies, cutff values have to be set, often arbitrarily. So far, in order to verify that the points are truly anomalies, the power generation curves have to be individually identified. This was fine for the major anomalies as there are relatively few major anomalies. However, this becomes time-consuming and ineffective when approaching the center of the distribution
+After filtering out the major anomalies identified using PCA, there is a fairly tight cluster of points that remain. In order to further identify anomalies, cutff values have to be set, often arbitrarily. So far, in order to verify that the points are truly anomalies, the power generation curves have to be individually scrutinized. This was fine for the major anomalies as there are relatively few major anomalies. However, this becomes time-consuming and ineffective when approaching the center of the distribution. 
 
-### Recommendations for Improvement
-1. **Combine PCA with Other Techniques**: While PCA was effective, combining it with other anomaly detection techniques, such as clustering methods or separate supervised learning using our identified anomalies, could provide a more robust anomaly detection framework. This hybrid approach could help in capturing a wider variety of anomalies that PCA alone might miss.
+While PCA was effective, combining it with other anomaly detection techniques, such as clustering methods or separate supervised learning using our identified anomalies, could provide a more robust anomaly detection framework. This hybrid approach could help in capturing a wider variety of anomalies that PCA alone might miss.
 
-### Final Thoughts
+### How well the labeled anomalies worked with supervised learning?
+
+## Recommendations for Improvement
+* **Combine PCA with Other Techniques**
+  * For this analysis, we combined PCA with statistical methods and isolation forests to identify anomalous ranges in the principal component space. It would be interesting to see how these methods compare to other common anomaly detection techniques like local outlier factor.
+* **Compare PCA on the Reconstructions to PCA on the Original Values**
+  * For this analysis, we only looked at the PCA results on the reconstructions. We assumed that the reconstructing the curves first would be more effective, and the resulting amount of variance explained seems to imply that this is indeed the case. However, it would be very useful to compare the results directly to quantify any benefits (if any exist at all).
+* **Analyze More Principal Components**
+  * While the first principal component explained over 90% of the variance, the remaining components only explain fractional percentages. The first component was clearly connected to the heights of the power curve, but the second component was much harder to analyze and connect to a specific property. Analyzing more principal components would give more insight into the curve shapes and may facilitate the identification of other anomalous curve shapes.
+
+## Final Thoughts
 Overall, PCA has shown to be a valuable tool in detecting anomalies within the dataset, especially those related to power spikes. Moreover, the identification of anomalies via PCA helps in creating a labeled dataset, which is crucial for training supervised learning models. By incorporating additional techniques and insights, we can further enhance the model's effectiveness and accuracy, providing a robust framework for anomaly detection and management.
 
-# Collaboration
+## Collaboration
 
