@@ -555,7 +555,7 @@ The average curve for the normal points has a bell-shape that peaked at about 0.
 A 3D variation of this plot was generated in order to visualize the change in the average curve as the score decreases with less overlaps in the view. Note how the average curves for instances where the scores are 0.6 and below start to diverge significantly from the expected bell-shape:
 
 <p align="center">
-  <img src="images/iforest_average_curves_3D.png" alt="Change in Average Curve as Outlier Score changes" width="600"/>
+  <img src="images/iforest_average_curves_3d.png" alt="Change in Average Curve as Outlier Score changes" width="600"/>
 </p>
 
 ## Supervised Anomaly Detection with Extracted Labeled Anomalies
