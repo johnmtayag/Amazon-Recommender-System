@@ -23,7 +23,7 @@ The 30 minute dataset has 2,644,013,376 rows representing timestamped energy out
 
 Each row in this dataset represents a single timestamped energy generation measurement from an individual solar PV system:
 
-<p align="center">
+<div align="center">
 
 |generation_wh|           datetime|ss_id|
 |-------------|-------------------|-----|
@@ -31,7 +31,7 @@ Each row in this dataset represents a single timestamped energy generation measu
 |          0.0|2010-11-18 00:30:00| 2405|
 |          0.0|2010-11-18 01:00:00| 2405|
 
-</p>
+</div>
 
 The metadata dataset has 24,662 rows containing supplementary information on how each solar PV system was configured. Notably, there are more PV systems identified in the metadata dataset than the number actually represented in the 30 minute dataset. There are eight columns:
 1. **ss_id**: The solar PV system ID number (integer)
@@ -45,7 +45,7 @@ The metadata dataset has 24,662 rows containing supplementary information on how
 
 Each row in this dataset contains the system configuration for an individual solar PV system:
 
-<p align="center">
+<div align="center">
 
 |ss_id|latitude_rounded|longitude_rounded|  llsoacd|orientation|tilt| kwp|operational_at|
 |-----|----------------|-----------------|---------|-----------|----|----|--------------|
@@ -53,7 +53,7 @@ Each row in this dataset contains the system configuration for an individual sol
 | 2406|           54.88|            -1.38|E01008780|      315.0|30.0|1.89|    2010-12-03|
 | 2407|           54.88|            -1.38|E01008780|      225.0|30.0|1.89|    2010-12-03|
 
-</p>
+</div>
 
 ## Setting Up the Environment
 We utilize the following non-standard Python libraries in our analysis - these need to be set up via pip install or conda install methods.
@@ -67,13 +67,13 @@ We utilize the following non-standard Python libraries in our analysis - these n
 ### Null Values
 There are 36 null values in the metadata dataset, specifically in the operational_at column:
 
-<p align="center">
+<div align="center">
 
 |ss_id|latitude_rounded|longitude_rounded|  llsoacd|orientation|tilt| kwp|operational_at|
 |-----|----------------|-----------------|---------|-----------|----|----|--------------|
 |    0|               0|                0|        0|          0|   0|   0|            36|
 
-</p>
+</div>
 
 ### Exploring the variables: Kwp (Solar PV System Power Rating)
 Most of the PV systems represented in this dataset have fairly low power ratings in the range of 2-4 kW. However, there are some notable outliers with kwp values up to and exceeding 200 kW. 
@@ -218,13 +218,15 @@ To aid in the identification of anomalous curves, PCA is used to reduce the dime
 ## Exploring the Relationships Between the Top 2 Principal Components
 As PCA is used to help identify outliers, it is important to determine any important properties that each principal component may represent. To aid this, the major outliers were first filtered out. Then, the data is sampled such that one principal component is set to its respective mean, while the other increases. The generation curves of a small sample of points linearly spaced across the respective PC range are plotted to visualize any changes in shape as the value of one of the principal components increases. Then, the maximum and minimum reconstructed power values are plotted for all points within this range to understand any relationships between the principal components and the power generation curves.
 
-The below plot shows the distribution of points after all major outliers identified during the PCA process were filtered out. At this level of granularity, the use of PC boundaries becomes more nuanced and arbitrary, so we utilize other methods to further identify any anomalies.
+The below plot shows the distribution of points after all major outliers identified during the PCA process were filtered out. At this level of granularity, the use of PC boundaries becomes more nuanced and arbitrary, so we combine PCA with other methods to further identify any anomalies.
 
 <p align="center">
   <img src="images/5_26_closeOutliers_1.png" alt="Plotting Minor Anomalies" width="500"/>
 </p>
 
-After projecting the data, a series of cutoff values along the top two principal components are used to identify anomalies at different scales until the PCA method becomes less effective.
+## Anomaly Detection Using PCA
+
+After projecting the data, a series of cutoff values along the top two principal components are used to identify anomalies at different scales until the PCA method becomes less effective. In order to identify the cutoff values, the change in the average power curve will be analyzed to detect when the curves start to destabilize.
 
 ### The anomalies detected here are separated out of the original dataset and are marked as labeled anomalies for later supervised anomaly detection methods. (Change this potentially)
 
@@ -254,6 +256,7 @@ However, Pyspark does not have any built-in isolation forest algorithms - instea
 
 **Custom Isolation Forest Process:**
 * First get the minimum and maximum values of the two variables (here, PC1 and PC2)
+* Scale PC1 and PC2 to be in the range of 0-1 using Pyspark's MinMaxScaler
 * For each forest:
     * For each tree:
         * Pick two random points within the space and get the parameters of the line that connects them in standard form (Ax +  By + C = 0)
@@ -268,7 +271,7 @@ To help visualize this process, the following figure shows 4 randomly generated 
   <img src="images/iforest_example_boundary_lines.png" alt="Example Isolation Forest Boundary Lines" width="800"/>
 </p>
 
-This method relies on both randomness and the aggregated results of weak learner predictions, so there can be a lot of variability in results. Thus, averaging the results across multiple trees and even multiple forests is ideal. To maximize the likelihood that an outliers identified with this method are truly anomalous, we will test different combinations of number of trees and number of splits per forest, and we will use the results of the combination with this lowest variance in results.
+This method relies on both randomness and the aggregated results of weak learner predictions, so there can be a lot of variability in results. Thus, averaging the results across multiple trees and even multiple forests is ideal. To maximize the likelihood that an outliers identified with this method are truly anomalous, we will test different combinations of number of trees and number of splits per forest, and we will use the results of the combination with the lowest average standard deviation in scores across all instances.
 
 With the chosen set of scores, we plot the data once again along the principal component axes, but this time with each point colored according to its outlier score. We also plot the change in the average reconstructed power curve as the outlier score decreases.
 
@@ -315,7 +318,7 @@ The resulting reconstructions model the overall average curve quite well, and th
 ### Analyzing Mean PC1 With Increasing PC2
 For the following figures, all points where PC1 is within 0.1 of its mean (-1.21) are extracted. Six points are then randomly sampled to visualize how the curves change as PC2 increases along the range. The next figure shows the maximum and minimum power generation values for each point within the range ordered by PC2 value.
 
-When PC2 is relatively low or relatively high, the resulting curves are highly irregular and deviate from a single central peak. However, no particular trends are present when analyzing the maximum and minimum power generation values within this range.
+When PC2 is relatively low or relatively high, the resulting curves are highly irregular and deviate from a single central peak. There is also a slight U-shape in the bottom of the distribution of maximum power values.
 
 <p align="center">
   <img src="images/mean_pc1_curves.png" alt="Visualization of Mean PC1 With Increasing PC2" width="800"/>
@@ -338,6 +341,13 @@ When PC1 is relatively low or relatively high, the resulting curve has a higher 
   <img src="images/mean_pc2_power.png" alt="Max and Min Power Generation With Mean PC2" width="650"/>
 </p>
 
+### Analyzing when the Principal Components are Zero
+A special case happens when both principal components are zero - the resulting power generation curve is flat, corresponding to no power being generated for the entire day. This occurs for 476,230 instances in the dataset, so this special case isn't entirely uncommon. Curiously, the principal components are either both non-zero, or they are both zero - no instance exists where only a single principal component is zero.
+
+<p align="center">
+  <img src="images/pca_0.png" alt="When PC1 = PC2 = 0" width="450"/>
+</p>
+
 ### Identifying Major Outliers via PCA
 When plotting the data along the top two principal components, four major groupings are present:
 1. A central grouping of points
@@ -345,7 +355,7 @@ When plotting the data along the top two principal components, four major groupi
 3. Points where PC1 < 100 and PC2 > 100
 4. Points where PC1 < 100 and PC2 < -100
 
-In total, 10 major anomalies were identified. The anomaly curves for each example in these groupings are plotted to analyze their shapes.
+In total, 10 major anomalies were identified. The anomaly curves for each example in these groupings are plotted to analyze their shapes. Each curve is associated with at least one or two spikes, and all but one spike occurred in both the positive and negative directions. There are is no particular trend in the value of either PC1 or PC2 as each curve exhibits a fairly similar spike.
 
 <p align="center">
   <img src="images/pca_top_two_principal_components2.png" alt="Principal Components" width="500"/>
@@ -356,7 +366,7 @@ In total, 10 major anomalies were identified. The anomaly curves for each exampl
 </p>
 
 ### Identifying Closer Outliers via PCA
-After filtering out the major outliers, a total of 7 more outliers can be identified located much more closely to the center of the distribution - these are data points where PC1 and/or PC2 are larger than 1. The curves of these minor outliers are similarly plotted below.
+After filtering out the major outliers, a total of 7 more outliers can be identified located much more closely to the center of the distribution - these are data points where PC1 and/or PC2 are larger than 1. The curves of these minor outliers are similarly plotted below. These curves also have large spikes in height, but at a significantly lesser scale. Many spikes are also shifted toward the final timestamps, corresponding to a sudden spike in energy product toward midnight hours.
 
 <p align="center">
   <img src="images/5_26_closeOutliers.png" alt="Plotting Minor Anomalies" width="500"/>
@@ -366,10 +376,47 @@ After filtering out the major outliers, a total of 7 more outliers can be identi
 </p>
 
 ### Identifying Principal Component Boundaries for Possible Anomalies
+To identify principal component boundaries that split the space into non-anomalous curves and anomalous curves, the average power curves at specific principal component values are analyzed. It is difficult to determine what exactly constitutes a "normal" curve as there can be a lot of variation in valid power curves, so for this analysis, the boundaries will be placed where the curves start to destabilize from the typical shape.
 
+For each curve, all instances where the given PC is close to a given value are aggregated such that the mean power generation curve can be visualized.
+
+#### Low PC1 Boundary
+When PC1 is -6 or lower, there is a distinct split in the average power curve's spike. The edges of the distribution also become a lot more variable.
+
+<p align="center">
+  <img src="images/pca_pc1_low.png" alt="Visualizing low pc1 curves" width="600"/>
+</p>
+
+#### High PC1 Boundary
+When PC1 is -0.02 or higher, the shape of the average curve widens and starts to diverge from a single spike.
+
+<p align="center">
+  <img src="images/pca_pc1_high.png" alt="Visualizing high pc1 curves" width="600"/>
+</p>
+
+#### Low PC2 Boundary
+All curves within this range are quite different from the bell-shape of the overall average curve's shape. However, when PC2 is lower than -0.475, the shape diverges even further with the spike on the right becoming a more prominent feature.
+
+<p align="center">
+  <img src="images/pca_pc2_low.png" alt="Visualizing low pc2 curves" width="600"/>
+</p>
+
+#### High PC2 Boundary
+Again, all curves within this range are quite different from the bell-shape of the overall average curve's shape. However, when PC2 is higher than 0.16, the shape of the average curve changes significantly with the bulk of the curve being more evenly distributed throughout the timestamp range.
+
+<p align="center">
+  <img src="images/pca_pc2_high.png" alt="Visualizing high pc2 curves" width="600"/>
+</p>
+
+### Visualizing the Principal Component Boundaries
+The identified PC boundaries of (-6 < PC1 < -0.02) and (-0.475 < PC2 < 0.16) are displayed below with anomalous points outside of the boundary range highlighted orange.
+
+<p align="center">
+  <img src="images/pca_anomaly_boundaries.png" alt="Visualizing the anomaly boundaries" width="500"/>
+</p>
 
 ## Further Anomaly Detection Using Statistical Methods
-To aid in the further identification of outliers, the previously identified points were filtered out to minimize the region of interest:
+To aid in the further identification of outliers, the previously identified major and close outlier points were filtered out to minimize the region of interest:
 
 <p align="center">
   <img src="images/5_26_closeOutliers_1.png" alt="Visualizing Minor Anomalies" width="500"/>
@@ -380,23 +427,23 @@ As previously stated, the interquartile range method identifies outliers along a
 
 **PC1 Outlier Statistics**:
 
-<p align="center">
+<div align="center">
 
 |High Cutoff|Low Cutoff|Number of High Outliers| Number of Low Outliers|
 |-----------|----------|-----------------------|-----------------------|
 |     1.5374|   -3.8405|                      0|                  16108|
 
-</p>
+</div>
 
 **PC2 Outlier Statistics**:
 
-<p align="center">
+<div align="center">
 
 |High Cutoff|Low Cutoff|Number of High Outliers| Number of Low Outliers|
 |-----------|----------|-----------------------|-----------------------|
 |     1.5374|   -3.8405|                  93105|                   2463|
 
-</p>
+</div>
 
 **Visualizing the Outliers**
 
@@ -421,23 +468,23 @@ As previously stated, the Z-score method identifies outliers along a single axis
 
 **PC1 Outlier Statistics**:
 
-<p align="center">
+<div align="center">
 
 |High Cutoff|Low Cutoff|Number of High Outliers| Number of Low Outliers|
 |-----------|----------|-----------------------|-----------------------|
 |     1.3410|   -3.7621|                      0|                  26770|
 
-</p>
+</div>
 
 **PC2 Outlier Statistics**:
 
-<p align="center">
+<div align="center">
 
 |High Cutoff|Low Cutoff|Number of High Outliers| Number of Low Outliers|
 |-----------|----------|-----------------------|-----------------------|
 |     0.0847|   -0.2128|                  84879|                   3186|
 
-</p>
+</div>
 
 **Visualizing the Outliers**
 
@@ -456,31 +503,37 @@ Again, there is almost no difference between this visualization and the previous
 </p>
 
 ## Further Anomaly Detection Using Isolation Forests
-The isolation forest algorithm incorporates a lot of randomness, so to obtain stable results, a high number of trees and splits is ideal. However, the more trees and splits utilized, the more costly the algorithm becomes (in terms of both time-elapsed and memory requirements). Thus, a series of tests were run, each using a different combination of the main two hyperparameters: The number of trees and the number of splits per tree. Each combination was run 5 times with the resulting score for each point averaged across all 5 runs.
+The isolation forest algorithm incorporates a lot of randomness, so to obtain stable results, a high number of trees and splits is likely ideal. However, the more trees and splits utilized, the more costly the algorithm becomes (in terms of both time-elapsed and memory requirements). Thus, a series of tests were run, each using a different combination of the main two hyperparameters: The number of trees and the number of splits per tree. Each combination was run 5 times with the resulting score for each point averaged across all 5 runs.
 
-<p align="center">
+The selected run will be the one with the lowest average standard deviation in scores for each instance.
 
-|Number of Trees|Number of Splits|Minimum Score| Maximum Score|Mean Score|Standard Deviation|
-|---------------|----------------|-------------|--------------|----------|------------------|
-|              1|              10|       0.4112|        0.9017|    0.8699|            0.0407|
-|              1|              30|       0.3994|        0.8858|    0.8470|            0.0475|
-|              3|              10|       0.4117|        0.9212|    0.8910|            0.0308|
-|              3|              30|       0.4247|        0.9187|    0.8908|            0.0344|
-|              5|              10|       0.4243|        0.9181|    0.8895|            0.0377|
-|              5|              30|       0.4295|        0.9165|    0.8880|            0.0345|
-|              7|              10|       0.4379|        0.9235|    0.8945|            0.0298|
-|              7|              30|       0.4409|        0.9247|    0.8962|            0.0358|
+<div align="center">
 
-</p>
+|Number of Trees|Number of Splits|Minimum Score| Maximum Score|Mean Score|Mean Standard Deviation in Scores|
+|---------------|----------------|-------------|--------------|----------|---------------------------------|
+|              1|              10|       0.3778|        0.9357|    0.8531|                           0.0134|
+|              1|              30|       0.3420|        0.9743|    0.9374|                           0.0017|
+|              3|              10|       0.4348|        0.9591|    0.9066|                           0.0033|
+|              3|              30|       0.4383|        0.9638|    0.9126|                           0.0007|
+|              5|              10|       0.4081|        0.9667|    0.9179|                           0.0045|
+|              5|              30|       0.4123|        0.9588|    0.9036|                           0.0003|
+|              7|              10|       0.3961|        0.9582|    0.9005|                           0.0023|
+|              7|              30|       0.4326|        0.9585|    0.9036|                           0.0005|
 
-Overall, the resulting scores were all quite similar, but the combination of 7 trees with 10 splits had the lowest overall standard deviation in scores, so these hyperparameters were chosen. For each point in this resulting model, the individual mean score and standard deviation across runs was taken, and the shapes of the distributions were visualized.
+</div>
+
+Overall, the resulting scores were all quite similar, but the combination of 5 trees with 30 splits had the lowest overall standard deviation in scores, so these hyperparameters were chosen. For each point in this resulting model, the individual mean score and standard deviation across runs was taken, and the shapes of the distributions were visualized.
 
 **Distribution of Mean Scores and Individual Standard Deviations**
 
-Most points had very high scores with the first quartile being located at around 0.875. The lower whisker for outlier values was located at about 0.825, so all scores below that cutoff were classified as outliers for this analysis. The individual standard deviations were all also extremely small, with most being well under 0.0025. The largest standard deviations were around 0.03, so overall, the results for this run were extremely stable.
+* Q1 = 0.8936
+* Q3 = 0.9349
+* Outlier Cutoff = Q1 - 1.5 * (Q3-Q1) = 0.8317
+
+Most points had very high scores with the interquartile range being located from 0.8936 to 0.9349. The lower whisker for outlier values was located at about 0.8317, so all scores below that cutoff were classified as outliers for this analysis. The individual standard deviations were all also extremely small, with most being well under 0.001. The largest standard deviations were around 0.013, so overall, the results for this run were extremely stable.
 
 <p align="center">
-  <img src="images/7t10s_distribution.png" alt="Distributions of scores" width="800"/>
+  <img src="images/5t30s_distribution.png" alt="Distributions of scores" width="800"/>
 </p>
 
 **Visualizing the Resulting Outlier Scores**
@@ -499,14 +552,18 @@ The average curve for the normal points has a bell-shape that peaked at about 0.
   <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="500"/>
 </p>
 
+A 3D variation of this plot was generated in order to visualize the change in the average curve as the score decreases with less overlaps in the view. Note how the average curves for instances where the scores are 0.6 and below start to diverge significantly from the expected bell-shape:
+
+<p align="center">
+  <img src="images/iforest_average_curves_3D.png" alt="Change in Average Curve as Outlier Score changes" width="600"/>
+</p>
+
 ## Supervised Anomaly Detection with Extracted Labeled Anomalies
 
 ## Identifying Correlations Between System Configurations and Outlier Frequency
-The following plots show the shapes of the distribution in the metadata variables according to anomaly grouping.
+The following plots show the shapes of the distribution in the metadata variables according to anomaly grouping. Compared to the distribution for all points, each of the anomaly groups had higher anomaly counts associated with systems in the higher kwp range. However, none of the other variables had any particular correlation with the frequency of outliers found using any of the methods.
 
 **Distributions of kwp**
-
-Compared to the distribution for all points, each of the anomaly groups had higher anomaly counts associated with systems in the higher kwp range. Though there appears to be spikes in the distribution for the PCA grouping, keep in mind that the scales on the y-axis are  significantly different between plots.
 
 <p align="center">
   <img src="images/outliers_kwp.png" alt="Distribution by Anomaly Grouping: kwp" width="650"/>
@@ -514,15 +571,11 @@ Compared to the distribution for all points, each of the anomaly groups had high
 
 **Distributions of latitude**
 
-There is a spike in outlier counts around 56 degrees in the PCA outlier grouping - this is from the single ss_id with 8 major anomalous curves identified previously. The other distributions have fairly similar shapes to the distribution for all systems, though the isolation forest group has very few instances with higher latitude
-
 <p align="center">
   <img src="images/outliers_latitude.png" alt="Distribution by Anomaly Grouping: latitude" width="650"/>
 </p>
 
 **Distributions of longitude**
-
-Similar to the latitude plots, there is another spike in counts at about -5 degrees in the PCA outlier grouping from the single ss_id with 8 anomalous curves. The others, again, have similar shapes to the distribution for all systems, though the isolation forest group has a significant spike at about -1 degrees.
 
 <p align="center">
   <img src="images/outliers_longitude.png" alt="Distribution by Anomaly Grouping: longitude" width="650"/>
@@ -530,15 +583,11 @@ Similar to the latitude plots, there is another spike in counts at about -5 degr
 
 **Distributions of panel orientation**
 
-The isolation forest group has very few instances where the panel orientation is greater than 200 degrees, especially compared to how many systems of these systems exist.
-
 <p align="center">
   <img src="images/outliers_orientation.png" alt="Distribution by Anomaly Grouping: orientation" width="650"/>
 </p>
 
 **Distributions of panel tilt**
-
-The isolation forest group again has another difference in the shape from the distribution of all systems - there are significant spikes in outlier counts where the panel tilt is at about 15 degrees and 20 degrees.
 
 <p align="center">
   <img src="images/outliers_tilt.png" alt="Distribution by Anomaly Grouping: tilt" width="650"/>
@@ -568,10 +617,10 @@ This formula transforms each value in "generation_wh" from the amount of Watts g
 Each entry in the 30 minute dataset consists of the system ID, the timestamp, and the measured energy output. In order to analyze the power output throughout an entire day, the timestamps must first be collected into groups by both system ID and date. As the measurements are taken every 30 minutes, there should be, ideally, 48 timestamps per system ID for every date. Due to the coarse-grained nature of these measurements, any missing data points can greatly affect the shapes of the fitted models, leading to possible false flags. Thus, in order to parameterize the power generation curves as accurately as possible, we need to minimize the number of missing data points.
 
 There are two main categories of missing data points:
-1. For a given solar PV system at a given timestamp (ex: 04/24/2019 12:30:00), the energy output was reported as NULL
+1. For a given solar PV system at a given timestamp (ex: 04/24/2019 12:30:00), the energy output was reported as null
 2. For a given solar PV system on a given day, fewer than 48 timestamps exist in the dataset
 
-All NULL values were removed from the dataset, and out of all pairings of ID-Date, only 144,730 had fewer than 48 timestamps - these were all also removed.
+All null values were removed from the dataset, and out of all pairings of ID-Date, only 144,730 had fewer than 48 timestamps - these were all also removed.
 
 ## Analyzing the Principal Components of the Reconstructed Power Curves
 As PC1 explains over 90% of the total variance, its value has the greatest impact on the overall shape of the curve. When PC1 is extremely high or extremely low, the resulting power generation curve has an anomalous spike which dominates the curve. After filtering out the major outliers and zooming into the normal range, an increase in PC1 is associated with a decrease in the maximum power value up until PC1 = 0. Afterward, the maximum power value appears to spike once again.
@@ -599,13 +648,24 @@ These properties correlate with the choice of basis vectors. As stated previousl
   <img src="images/5_26_closeOutliers_visualized.png" alt="Visualizing Minor Anomalies" width="700"/>
 </p>
 
+## Analyzing the Effectiveness of Determining Principal Component Boundaries for Outlier Detection
+Relying only on principal component values to determine outlier boundaries had mixed results - on one hand, while this approach was effective in dividing the space into normal and anomalous regions, the cutoff values were somewhat arbitrarily set based on minor visual differences in curve shapes. This worked well for the upper boundaries, but most of the curves near the lower boundaries varied quite a lot from the overall average curve. This is partly due to a lack of data - as can be seen in the below figure, the regions where both lower boundaries were set had very few instances. The process itself is also quite tedious and required a lot of manual adjustments, so overall, this method is fairly inefficient.
+
+Another notable downside is that the resulting boundaries are linear and restricted to being perpendicular to the axes. The distribution of the data is quite non-linear, so setting boundaries in this manner inherently misses many potential anomalies.
+
+To address these shortcomings, we combined the PCA approach with other methods to maximize the utility of the principal components.
+
+<p align="center">
+  <img src="images/pca_anomaly_boundaries.png" alt="Visualizing the anomaly boundaries" width="500"/>
+</p>
+
 ## Analyzing the Effectiveness of Statistical Methods for Outlier Detection
 Both the interquartile method and the z-score method resulted in very similar cutoff values and very similar average curve shapes for each grouping of outliers. Both methods resulted in no high PC1 outliers, and both methods had high PC2 outliers that closely resembled the normal curve. Also, both methods show the low PC2 outliers as having skinnier distributions compared to the low PC1 outlier group.
 
 While they were very similar, though, the interquartile method extracted a significantly lower number of low outliers, especially on the PC1 axis, and a slightly higher number of high outliers on the PC2 axis. Neither method worked particularly well at identifying truly anomalous curves, and this is likely attributed to the distribution not being normal. The distribution is highly left skewed, particularly along the PC1 axis. Both methods also set a single boundary line in either direction which limits any further analysis as only a single average curve can be generated to analyze each anomaly grouping.
 
 ## Analyzing the Effectiveness of the Isolation Forest for Outlier Detection
-The isolation forest was quite effective in separating out outliers from the central cluster in all directions. Most of the points with the lowest scores are located far to the left of the distribution, and the score increases when approaching the mean. These scores also help to further organize the anomalies into subcategories correlating with distance from the mean.
+The isolation forest was quite effective in separating out outliers from the central cluster in all directions. Most of the points with the lowest scores are located far to the left of the distribution, and the score increases when approaching the mean. Compared to the previous methods, however, the score These scores also help to further organize the anomalies into subcategories correlating with distance from the mean. 
 
 Plotting the average reconstruction curve as the score decreases is quite interesting - as the outlier score decreases, the height of the curve's peak increases and slowly splits into one tall curve and one slightly smaller peak to the right. Also, the variance seems to increase as the overall curve's shape becomes more jagged. The change in the mean curve reveals that the further away a point's PC1 and PC2 values are from the mean, the more irregular the power generation curve becomes.
 
@@ -614,7 +674,7 @@ Without extra information, it is hard to explain why the average curve seems to 
 <center>
 <p float="left" align="center">
   <img src="images/visualizing_score_distribution_outliers_highlighted.png" alt="Distributions of scores" width="380"/>
-  <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="400"/>
+  <img src="images/iforest_average_curves.png" alt="Change in Average Curve as Outlier Score changes" width="410"/>
 </p>
 </center>
 
@@ -629,11 +689,6 @@ This result seems to suggest that, in order to ensure that all identified curves
   <img src="images/outliers_kwp.png" alt="Distribution by Anomaly Grouping: kwp" width="650"/>
 </p>
 
-Though the outlier frequencies for the IQR and STD methods had fairly similar distributions to the number of systems represented in the dataset, the isolation forest group did have a few notable differences in the orientation and tilt variables. Significantly fewer systems with an orientation above 200 degrees had outlier scores below 0.6. There were also a couple of spikes in outlier frequency where the panel tilt was at about 15 degrees and 20 degrees. The data suggests that there may be some kind of correlation between the frequency of anomalous power generation curves and panel tilt/orientation, but further analysis is required to confirm this suspicion.
-
-<p align="center">
-  <img src="images/outliers_orientation_tilt.png" alt="Distribution by Anomaly Grouping: iforest only" width="650"/>
-</p>
 
 # Conclusion
 
