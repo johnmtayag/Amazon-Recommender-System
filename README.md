@@ -324,6 +324,9 @@ To help visualize this process, the following figure shows 4 randomly generated 
 
 This method relies on both randomness and the aggregated results of weak learner predictions, so to maximize the likelihood that outliers identified with this method are truly anomalous, we will test different combinations of number of trees and number of splits per forest, and we will analyze the results of the combination with the lowest average standard deviation in scores across all instances.
 
+The initial outlier grouping will be the set of all points with a score that falls outside of the lower whisker, but this range will be further restricted by comparing the average power curve shapes within the outlier groups.
+
+
 ## Testing Supervised Anomaly Detection Methods Using Labeled Data
 
 ## Identifying Correlations Between System Configurations and Outlier Frequency
@@ -574,9 +577,9 @@ To test other anomaly detection methods, the previously identified major and clo
 <br>
 <b>Figure 24.b (Upper Right):</b> Visualizing the outliers identified along the PC2 axis using the interquartile range method
 <br>
-<b>Figure 29.a (Left):</b> Visualizing the outliers identified along the PC1 axis using the z-score method. No high outliers for were identified, so the figure only shows the low outliers.
+<b>Figure 24.c (Lower Left):</b> Visualizing the outliers identified along the PC1 axis using the z-score method. No high outliers for were identified, so the figure only shows the low outliers.
 <br>
-<b>Figure 29.b (Right):</b> Visualizing the outliers identified along the PC2 axis using the z-score method
+<b>Figure 24.d (Lower Right):</b> Visualizing the outliers identified along the PC2 axis using the z-score method
 </div>
 <br>
 
@@ -638,7 +641,7 @@ Unlike the low outlier groups, the shape of the average curve for the high PC2 o
 ## Further Anomaly Detection Using Isolation Forests
 The isolation forest algorithm incorporates a lot of randomness, so to obtain stable results, aggregating the scores across a high number of trees and splits is ideal. However, the more trees and splits utilized, the more costly the algorithm becomes (in terms of both time-elapsed and memory-storage requirements). Thus, a series of tests were run, each using a different combination of the main two hyperparameters: The number of trees and the number of splits per tree. Each combination was run 5 times with the resulting score for each point averaged across all 5 runs. The statistics for each run is recorded in table 9 below. 
 
-As this is an unsupervised method, there are no particularly great ways to analyze the accuracy of these results. Instead, for each run, we compute the standard deviation in scores given to each point, then compute the average standard deviation across all runs. The criterion for the best set of hyperparameters will be the set which produced the lowest mean standard deviation in scores across all points, indicating higher certainty in the scores.
+Overall, the resulting scores were actually all quite similar, but  run 6 with 5 trees with 30 splits had the lowest overall standard deviation in scores, so these hyperparameters were chosen. For each point in this resulting model, the individual mean score and standard deviation across runs were extracted, and the shapes of the distributions were visualized.
 
 <div align="center">
 
@@ -681,11 +684,9 @@ While all runs had similar scoring statistics, only a few had the lowest average
 
 </div>
 <div align="center">
-<b>Table 10:</b> Displaying the counts of instances grouped by score value rounded to the nearest 0.025 value. 
+<b>Table 10:</b> Displaying the counts of instances in run 6 (5 trees and 30 splits) grouped by score value rounded to the nearest 0.025 value. 
 </div>
 <br>
-
-Overall, the resulting scores were actually all quite similar, but the run 6 with 5 trees with 30 splits had the lowest overall standard deviation in scores, so these hyperparameters were chosen. For each point in this resulting model, the individual mean score and standard deviation across runs were extracted, and the shapes of the distributions were visualized.
 
 ### Distribution of Mean Scores and Individual Standard Deviations
 Most points had very high scores with the interquartile range being located from 0.8936 to 0.9349. The lower whisker for outlier values was located at about 0.8317, so all scores below that cutoff were classified as outliers for this analysis. Out of 28,087,969 total rows, only 2,255,581 fell below this cutoff. The individual standard deviations were all also extremely small, with most being well under 0.001. 
