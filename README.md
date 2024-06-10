@@ -1114,4 +1114,4 @@ Overall, PCA has shown to be a valuable tool in detecting anomalies within the d
 ## Collaboration
 John worked on transforming the dataset from individual timestamps to a usable collection of power value measurements. He performed both the fourier transform and the principal component analysis, then performed the outlier analyses (PCA, statistical methods, isolation forest) to create a labeled set of anomalous data points.
 
-Zoey worked on developing figures to visualize the dataset and model results. She also tested how well the identified anomalies could act as a labeled dataset for rning methods.
+Zoey worked on developing figures to visualize the dataset and model results. She also tested how well the identified anomalies could act as a labeled dataset for training supervised learning methods.
