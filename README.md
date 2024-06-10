@@ -1054,7 +1054,7 @@ The logistic regression model trained on the labeled dataset of anomalies and no
 
 ## Analyzing the Distributions of System Configurations Within Anomaly Groupings
 Overall, as seen in 
-figure 31<!-- FIGURE NUMBER ################################################################## -->
+figure 34<!-- FIGURE NUMBER ################################################################## -->
 the only variable that appears to correlate strongly with the occurence of anomalies is kwp. This makes sense as many of the average "anomalous" curves were simply normal curves with higher peaks. The average outlier curves identified with both statistical methods had fairly normal shapes that had peaks at 3 kW or lower. Similarly, the average curves identified using the isolation forest followed a similar pattern until the score dropped to 0.65 or below. However, given that the kwp cutoff for solar PV systems to be included in this analysis was 3.42, many of these "anomalies" may actually be legitimate curves. 
 
 This result seems to suggest that, in order to ensure that all identified curves are truly anomalous, the dataset may need to be even further restricted to a smaller smaller subset of solar PV systems.
