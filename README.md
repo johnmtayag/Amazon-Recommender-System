@@ -326,8 +326,65 @@ This method relies on both randomness and the aggregated results of weak learner
 
 The initial outlier grouping will be the set of all points with a score that falls outside of the lower whisker, but this range will be further restricted by comparing the average power curve shapes within the outlier groups.
 
-
 ## Testing Supervised Anomaly Detection Methods Using Labeled Data
+This section of the project focuses on testing supervised anomaly detection methods using labeled data. To create a labeled dataset for supervised learning, outliers identified through two different methods were combined:
+
+1. **Principal Component Analysis (PCA)** Anomalous points were identified based on high or low PC1 and PC2 values.
+2. **Isolation Forest:** Outliers were identified using the Isolation Forest algorithm, and a cutoff score of 0.746 was applied to filter the significant outliers.
+
+These outliers were combined to create a labeled dataset where a label of 1 indicates an anomaly and 0 indicates normal.
+
+### Data Preprocessing, Sampling, and Model Training
+Data preprocessing, sampling, and model training involved several key steps:
+
+**Data Preprocessing**
+- **Loading and Merging Data:** Labeled anomalies and outliers were merged with the original dataset, ensuring no duplicated column names.
+- **Feature Engineering:** String columns were converted to arrays and then to vectors. VectorAssembler was used to combine multiple feature columns into a single feature vector.
+- The features selected were:
+  - `reconstructions_vector`: The reconstructed power values.
+  - `original_recon_PC1`: The first principal component of the reconstructed power values.
+  - `original_recon_PC2`: The second principal component of the reconstructed power values.
+- **Handling Missing Values:** Rows with empty vectors were filtered out.
+
+**Sampling**
+<br>
+
+Given the class imbalance, it was essential to balance the dataset to improve the model's performance:
+- **Sampling:** A portion of the data was sampled to reduce the computational load while retaining a balanced class distribution.
+<div align="center">
+
+| Label | Count      |
+|-------|------------|
+| 1     | 428,697,205|
+| 0     | 316,713    |
+
+</div>
+
+<div align="center">
+Label distribution <em>before</em> sampling and balancing
+</div>
+<br>
+
+<div align="center">
+
+| Label | Count  |
+|-------|--------|
+| 1     | 309,550|
+| 0     | 309,845|
+
+</div>
+
+<div align="center">
+Label distribution <em>after</em> sampling and balancing
+</div>
+<br>
+
+- **Down-sampling the Majority Class:** The majority class (label 1) was sampled to match the size of the minority class (label 0).
+
+Logistic regression with 5-fold cross-validation was used to train the model:
+- **Logistic Regression Model:** Configured with features as input and label as the target.
+- **Cross-Validation:** Used to tune the regularization parameter (regParam) with values [0.1, 0.01].
+- **Binary Classification Evaluator:** Used to evaluate the model based on the area under the ROC curve (AUC).
 
 ## Identifying Correlations Between System Configurations and Outlier Frequency
 To see if there is any correlation between the rate of occurence of the identified anomalies with any of the PV system configuration parameters, the data is partitioned into two main groups for each anomaly detection technique - outliers and all points. Then, the distributions are visualized with histograms. Only the following outlier subgroups are included for these visualizations:
@@ -739,11 +796,59 @@ A 3D variation of this plot was generated in order to visualize the change in th
   <img src="images/iforest_average_curves_3d.png" alt="Change in Average Curve as Outlier Score changes" width="600"/>
 </p>
 <div align="center">
-<b>Figure 30:</b> Similar to figure 33, but with the data displayed in a 3D space to visualize the change in shape more easily. 
+Similar to figure 33, but with the data displayed in a 3D space to visualize the change in shape more easily. 
 </div>
 <br>
 
 ## Supervised Anomaly Detection with Extracted Labeled Anomalies
+This section presents the results of the supervised anomaly detection model using the extracted labeled anomalies. The logistic regression model was trained on a balanced dataset and evaluated on a separate test dataset. The key results and visualizations are provided below.
+
+### Confusion Matrix
+The confusion matrix below illustrates the performance of the logistic regression model in predicting anomalies. It shows the counts of true positive (TP), true negative (TN), false positive (FP), and false negative (FN) predictions.
+
+<p align="center">
+  <img src="images/confusion_matrix.png" alt="Confusion Matrix" width="500"/>
+</p>
+<div align="center">
+Confusion Matrix illustrating the true positives, true negatives, false positives, and false negatives.
+</div>
+<br>
+
+### ROC Curve
+The Receiver Operating Characteristic (ROC) curve below plots the true positive rate (TPR) against the false positive rate (FPR) at various threshold settings. The area under the curve (AUC) is a measure of the model's ability to distinguish between classes.
+
+<p align="center">
+  <img src="images/roc_curve.png" alt="ROC Curve" width="500"/>
+</p>
+<div align="center">
+ROC Curve representing the true positive rate against the false positive rate for the logistic regression model.
+</div>
+<br>
+
+### Precision-Recall Curve
+The Precision-Recall curve below shows the trade-off between precision and recall for different threshold settings. This curve is useful for evaluating the performance of the model on imbalanced datasets.
+
+<p align="center">
+  <img src="images/precision_recall_curve.png" alt="Precision-Recall Curve" width="500"/>
+</p>
+<div align="center">
+<b>Figure xxx:</b> Precision-Recall Curve showing the trade-off between precision and recall for the logistic regression model.
+</div>
+<br>
+
+### Metrics Summary
+The table below summarizes the key evaluation metrics for the logistic regression model, including accuracy, weighted precision, weighted recall, and F1 score.
+
+<div align="center">
+ 
+| **Metric**            | **Value**   |
+|-----------------------|-------------|
+| Accuracy              | 0.702       |
+| Weighted Precision    | 0.656       |
+| Weighted Recall       | 0.652       |
+| F1 Score              | 0.650       |
+
+</div>
 
 ## Identifying Correlations Between System Configurations and Outlier Frequency
 The following plots show the shapes of the distribution in the metadata variables according to anomaly grouping. Compared to the distribution for all points, each of the anomaly groups had higher anomaly counts associated with systems in the higher kwp range. However, none of the other variables had any particular correlation with the frequency of outliers found using any of the methods.
@@ -923,6 +1028,29 @@ Another large drawback is that this method relies on there being a single main c
 Finally, while the resulting outlier scores clearly showed a transition between normal curves and anomalous curves, the cutoff point was set arbitrarily - this method would be greatly improved if the outlier score were somehow transformed into a probability distribution instead.
 
 ## Analyzing the Effectivness of Supervised Outlier Detection Methods
+The logistic regression model trained on the labeled dataset of anomalies and normal data points demonstrates a moderate level of effectiveness in detecting anomalies. Here's a detailed analysis of the model's performance based on the provided metrics:
+
+### Key Metrics
+- **Accuracy (0.702)**: 
+  - *Interpretation*: The model correctly predicts the label for 70% of the data points. This is a decent accuracy level, especially considering the complexities involved in detecting anomalies.
+  - *Analysis*: While an accuracy of 70% indicates a reasonable level of performance, there is room for improvement. A more accurate model would be more reliable in practical applications.
+- **Weighted Precision (0.656)**: 
+  - *Interpretation*: The precision score of 65.61% means that out of all the data points predicted as anomalies, 65.61% were correctly identified.
+  - *Analysis*: This level of precision indicates that the model has a moderate tendency to avoid false positives. However, it also suggests that there are still a significant number of false positive predictions, which could be problematic in scenarios where false alarms are costly or disruptive.
+- **Weighted Recall (0.652)**: 
+  - *Interpretation*: The recall score of 65.23% indicates that out of all the actual anomalies, the model correctly identified 65.23% of them.
+  - *Analysis*: This recall value shows that the model is moderately effective at identifying true anomalies. However, it also means that 34.77% of actual anomalies are missed by the model, which could be critical depending on the application's requirements.
+- **F1 Score (0.650)**: 
+  - *Interpretation*: The F1 score, which is the harmonic mean of precision and recall, is 65%.
+  - *Analysis*: The F1 score provides a balanced measure of the model's precision and recall. A score of 65% is indicative of moderate performance, suggesting that the model maintains a reasonable balance between precision and recall. However, improvements in either or both metrics would lead to a higher F1 score and a more reliable model.
+
+### ROC and Precision-Recall Curves
+- **ROC Curve**: 
+  - *Interpretation*: The area under the ROC curve (AUC) is 0.70.
+  - *Analysis*: An AUC of 0.70 indicates that the model has a good ability to distinguish between anomalies and normal data points. However, an AUC closer to 1 would signify a more robust model. The ROC curve suggests that while the model performs well at certain thresholds, there is still room for improvement.
+- **Precision-Recall Curve**: 
+  - *Interpretation*: The precision-recall curve shows the relationship between precision and recall across different thresholds.
+  - *Analysis*: The curve illustrates that as recall increases, precision decreases, which is typical for imbalanced datasets. The model performs reasonably well, but the curve suggests that at higher recall levels, the precision drops significantly, highlighting the trade-off between identifying more anomalies and increasing false positives.
 
 ## Analyzing the Distributions of System Configurations Within Anomaly Groupings
 Overall, as seen in 
@@ -963,6 +1091,14 @@ After filtering out the major anomalies identified using PCA, there is a fairly 
 While PCA was effective, combining it with other anomaly detection techniques, such as clustering methods or separate supervised learning using our identified anomalies, could provide a more robust anomaly detection framework. This hybrid approach could help in capturing a wider variety of anomalies that PCA alone might miss.
 
 ### How well the labeled anomalies worked with supervised learning?
+The use of labeled anomalies in supervised learning has proven to be moderately effective. The model's performance metrics and confusion matrix indicate that the labeled data helped the model distinguish between normal and anomalous points to a reasonable extent. However, the presence of significant false positives and false negatives suggests that the labeling and the model itself can be further refined.
+
+**Overall Analysis**:
+- **Strengths**: The model shows a balanced performance with a decent accuracy of 70%, indicating it can be a useful tool for anomaly detection. The balanced dataset helps in managing the class imbalance problem, providing a fair representation of both classes.
+- **Weaknesses**: The precision and recall values suggest that there are still significant false positives and false negatives. This moderate performance may not be sufficient for critical applications where the cost of missing an anomaly or false alarms is high.
+- **Recommendations for Improvement**: To enhance the model's performance, consider experimenting with more complex models such as ensemble methods (e.g., random forests, gradient boosting) or deep learning techniques. Further tuning of hyperparameters and incorporating additional features through feature engineering could also improve the model's predictive capabilities.
+
+Moving forward, a focus on improving the model's precision and recall will be crucial. Additionally, exploring alternative anomaly detection algorithms and combining their predictions might lead to better overall performance.
 
 ## Recommendations for Improvement
 * **Combine PCA with Other Techniques**
@@ -978,4 +1114,4 @@ Overall, PCA has shown to be a valuable tool in detecting anomalies within the d
 ## Collaboration
 John worked on transforming the dataset from individual timestamps to a usable collection of power value measurements. He performed both the fourier transform and the principal component analysis, then performed the outlier analyses (PCA, statistical methods, isolation forest) to create a labeled set of anomalous data points.
 
-Zoey worked on developing figures to visualize the dataset and model results. She also tested how well the identified anomalies could act as a labeled dataset for supervised learning methods.
+Zoey worked on developing figures to visualize the dataset and model results. She also tested how well the identified anomalies could act as a labeled dataset for rning methods.
