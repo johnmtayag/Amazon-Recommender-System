@@ -796,7 +796,7 @@ A 3D variation of this plot was generated in order to visualize the change in th
   <img src="images/iforest_average_curves_3d.png" alt="Change in Average Curve as Outlier Score changes" width="600"/>
 </p>
 <div align="center">
-Similar to figure 33, but with the data displayed in a 3D space to visualize the change in shape more easily. 
+<b>Figure 30:</b> Similar to figure 36, but with the data displayed in a 3D space to visualize the change in shape more easily. 
 </div>
 <br>
 
@@ -810,7 +810,7 @@ The confusion matrix below illustrates the performance of the logistic regressio
   <img src="images/confusion_matrix.png" alt="Confusion Matrix" width="500"/>
 </p>
 <div align="center">
-Confusion Matrix illustrating the true positives, true negatives, false positives, and false negatives.
+<b>Figure 31:</b> Confusion Matrix illustrating the true positives, true negatives, false positives, and false negatives.
 </div>
 <br>
 
@@ -821,7 +821,7 @@ The Receiver Operating Characteristic (ROC) curve below plots the true positive 
   <img src="images/roc_curve.png" alt="ROC Curve" width="500"/>
 </p>
 <div align="center">
-ROC Curve representing the true positive rate against the false positive rate for the logistic regression model.
+<b>Figure 32:</b> ROC Curve representing the true positive rate against the false positive rate for the logistic regression model.
 </div>
 <br>
 
@@ -832,7 +832,7 @@ The Precision-Recall curve below shows the trade-off between precision and recal
   <img src="images/precision_recall_curve.png" alt="Precision-Recall Curve" width="500"/>
 </p>
 <div align="center">
-<b>Figure xxx:</b> Precision-Recall Curve showing the trade-off between precision and recall for the logistic regression model.
+<b>Figure 33:</b> Precision-Recall Curve showing the trade-off between precision and recall for the logistic regression model.
 </div>
 <br>
 
@@ -857,7 +857,7 @@ The following plots show the shapes of the distribution in the metadata variable
   <img src="images/outliers_kwp.png" alt="Distribution by Anomaly Grouping: kwp" width="650"/>
 </p>
 <div align="center">
-<b>Figure 31:</b> Comparing the frequency of outlier occurence at different kwp values
+<b>Figure 34:</b> Comparing the frequency of outlier occurence at different kwp values
 </div>
 <br>
 
@@ -865,7 +865,7 @@ The following plots show the shapes of the distribution in the metadata variable
   <img src="images/outliers_latitude.png" alt="Distribution by Anomaly Grouping: latitude" width="650"/>
 </p>
 <div align="center">
-<b>Figure 32:</b> Comparing the frequency of outlier occurence at different latitude values
+<b>Figure 35:</b> Comparing the frequency of outlier occurence at different latitude values
 </div>
 <br>
 
@@ -873,7 +873,7 @@ The following plots show the shapes of the distribution in the metadata variable
   <img src="images/outliers_longitude.png" alt="Distribution by Anomaly Grouping: longitude" width="650"/>
 </p>
 <div align="center">
-<b>Figure 33:</b> Comparing the frequency of outlier occurence at different longitude values
+<b>Figure 36:</b> Comparing the frequency of outlier occurence at different longitude values
 </div>
 <br>
 
@@ -881,7 +881,7 @@ The following plots show the shapes of the distribution in the metadata variable
   <img src="images/outliers_orientation.png" alt="Distribution by Anomaly Grouping: orientation" width="650"/>
 </p>
 <div align="center">
-<b>Figure 34:</b> Comparing the frequency of outlier occurence at different orientation values
+<b>Figure 37:</b> Comparing the frequency of outlier occurence at different orientation values
 </div>
 <br>
 
@@ -889,7 +889,7 @@ The following plots show the shapes of the distribution in the metadata variable
   <img src="images/outliers_tilt.png" alt="Distribution by Anomaly Grouping: tilt" width="650"/>
 </p>
 <div align="center">
-<b>Figure 35:</b> Comparing the frequency of outlier occurence at different tilt values
+<b>Figure 38:</b> Comparing the frequency of outlier occurence at different tilt values
 </div>
 <br>
 
@@ -915,7 +915,7 @@ The below plot shows the distribution of principal components from the later ana
   <img src="images/pc1pc2_by_maxpower.png" alt="PC Boundaries for Anomalies Without Filtering" width="500"/>
 </p>
 <div align="center">
-<b>Figure 36:</b> Visualizing how when higher kwp systems are included in the dataset, the distribution becomes more spread out, further complicating the anomaly identification process
+<b>Figure 39:</b> Visualizing how when higher kwp systems are included in the dataset, the distribution becomes more spread out, further complicating the anomaly identification process
 </div>
 <br>
 
@@ -938,13 +938,13 @@ There are two main categories of missing data points:
 All null values were removed from the dataset, and out of all pairings of ID-Date, only 144,730 had fewer than 48 timestamps - these were all also removed.
 
 ## Analyzing the Principal Components of the Reconstructed Power Curves
-Instead of analyzing the power generation curves directly, we first approximated them by projecting them onto the basis vectors. The more vectors utilized in this process, the closer the approximation. While we could have employed more basis vectors, we settled on a low enough number that would capture as much variance as possible while still reducing the noise. As seen in figure 41, most of the curves were actually fairly well approximated with only 10 basis vectors - the main drawback was that many complicated curves (like the third curve) required extra basis vectors to model the flat edges on either side.
+Instead of analyzing the power generation curves directly, we first approximated them by projecting them onto the basis vectors. The more vectors utilized in this process, the closer the approximation. While we could have employed more basis vectors, we settled on a low enough number that would capture as much variance as possible while still reducing the noise. As seen in figure 40, most of the curves were actually fairly well approximated with only 10 basis vectors - the main drawback was that many complicated curves (like the third curve) required extra basis vectors to model the flat edges on either side.
 
 <p align="center">
   <img src="images/compare_power_curves_approx.png" alt="Comparison of Original and Approximated Curves" width="800"/>
 </p>
 <div align="center">
-<b>Figure 37:</b> Visualizing how the reconstruction approximates the original power curve at increasing accuracy when more basis vectors are utilized. Simpler curves are approximated quite well with only a few vectors while more complicated ones require the full basis for accurate approximation.
+<b>Figure 40:</b> Visualizing how the reconstruction approximates the original power curve at increasing accuracy when more basis vectors are utilized. Simpler curves are approximated quite well with only a few vectors while more complicated ones require the full basis for accurate approximation.
 </div>
 <br>
 
